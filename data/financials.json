@@ -128,19 +128,63 @@
     "ebitda_pct": 0.131399246507258,
     "pbt": 1459746.0506683523
   },
-  "sga_breakdown_ytd": {
-    "Sales commission & bonus": 1183777.5616282504,
-    "Payroll & benefits \u2013 onsite": 940823.4958682298,
-    "Payroll & benefits \u2013 offshore": 295739.93,
-    "Payroll PSS non-billable": 160745.73763541668,
-    "Third-party contractors": 147462.52,
-    "Other G&A expenses": 125999.9596401107,
-    "Dues & subscriptions": 92356.849193604,
-    "Travel & entertainment": 57161.03094611791,
-    "Professional fees": 38567.17361563929,
-    "Insurance": 38523.55,
-    "Marketing, campaigns & events": 30832.619999999995,
-    "Rent & utilities": 12686.09,
-    "Communication": 22843.909275474183
+  "balance_sheet": {
+    "months": [
+      "Jul-26",
+      "Aug-26"
+    ],
+    "ppe": [
+      2331896.0,
+      2347664.0
+    ],
+    "trade_receivables": [
+      2144849.0,
+      2335712.0
+    ],
+    "inventory": [
+      768980.0,
+      548050.0
+    ],
+    "cash": [
+      345670.0,
+      393930.0
+    ],
+    "other_assets": [
+      8816338.0,
+      9670783.0
+    ],
+    "total_assets": [
+      14407733.0,
+      15296139.0
+    ],
+    "shareholders_fund": [
+      -13531067.0,
+      -13531067.0
+    ],
+    "debts": [
+      2664405.0,
+      2781915.0
+    ],
+    "trade_payables": [
+      2456792.0,
+      2538750.0
+    ],
+    "deferred_revenue": [
+      3187640.0,
+      3308681.0
+    ],
+    "other_liabilities": [
+      19629963.0,
+      20197860.0
+    ],
+    "total_equity_liability": [
+      14407733.0,
+      15296139.0
+    ]
+  },
+  "cash_flow": {
+    "change_wc": -112025.0,
+    "change_capex": 240768.0,
+    "fcf": 373143.40282510594
   }
 }
