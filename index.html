@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
 <style>
   :root{
     --ink:#0F2A43;
@@ -225,10 +225,10 @@
       <span class="tag">YTD APR–AUG 2026</span>
     </div>
     <p class="insight" id="execSummaryText">
-      Loading commentary…
+      Loading executive summary…
     </p>
-    <p class="caption" style="margin:-14px 0 22px;">
-      Note: this paragraph is written commentary, not auto-generated — update it by hand (or ask Claude) each time <code>data/financials.json</code> is refreshed. The KPI cards and every chart below recompute automatically from that file.
+    <p class="caption" id="execSummarySource" style="margin:-14px 0 22px;">
+      Automatically generated from <code>financials.json</code>.
     </p>
 
     <div class="kpi-grid" id="kpiGrid">
@@ -371,9 +371,32 @@
 let D = null;
 
 async function loadData() {
-  const res = await fetch('data/financials.json');
-  if (!res.ok) throw new Error('Could not load data/financials.json');
-  D = await res.json();
+  // GitHub Pages serves this site as a static project. Support both the
+  // documented data/ location and a root-level financials.json so the
+  // dashboard still works if the JSON was committed beside index.html.
+  const candidates = [
+    './data/financials.json',
+    './financials.json'
+  ];
+
+  let lastError = null;
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (res.ok) {
+        D = await res.json();
+        return;
+      }
+      lastError = new Error(`${url} returned HTTP ${res.status}`);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw new Error(
+    'Could not load financials.json. Tried ./data/financials.json and ./financials.json. ' +
+    (lastError ? lastError.message : '')
+  );
 }
 
 const INK = '#0F2A43', STEEL='#1B3A5C', ACCENT='#1F6FEB', ACCENT_SOFT='#9CC0FA', POS='#1E7145', NEG='#AE3A2E', MUTED='#5C6670', LINE='#DEE2E2';
@@ -395,6 +418,61 @@ function pctPoint(v){ return (v*100).toFixed(1); }
 function lastActualIndex(arr){
   for(let i=arr.length-1;i>=0;i--){ if(arr[i] !== 0) return i; }
   return arr.length-1;
+}
+
+
+function renderExecutiveSummary(D){
+  const revenue = D.revenue.total || [];
+  const months = D.months || [];
+  const lastIdx = lastActualIndex(revenue);
+  const lastMonth = months[lastIdx] || 'latest month';
+  const lastRevenue = revenue[lastIdx] || 0;
+  const prevRevenue = lastIdx > 0 ? (revenue[lastIdx - 1] || 0) : 0;
+
+  const revenueChange = prevRevenue !== 0
+    ? ((lastRevenue - prevRevenue) / Math.abs(prevRevenue)) * 100
+    : null;
+
+  const gm = D.gm_pct || [];
+  const gmMin = gm.length ? Math.min(...gm) : 0;
+  const gmMax = gm.length ? Math.max(...gm) : 0;
+
+  const ytdRevenue = D.ytd.revenue || 0;
+  const ytdGmPct = D.ytd.gm_pct || 0;
+  const ytdEbitda = D.ytd.ebitda || 0;
+  const ytdEbitdaPct = D.ytd.ebitda_pct || 0;
+  const ytdPbt = D.ytd.pbt || 0;
+  const depreciation = D.ytd.depreciation || 0;
+  const financeCharges = D.ytd.finance_charges || 0;
+
+  const revenueTrend = revenueChange === null
+    ? `${lastMonth} revenue was ${fmtUSD(lastRevenue)}`
+    : `${lastMonth} revenue was ${fmtUSD(lastRevenue)}, ${revenueChange >= 0 ? 'up' : 'down'} ${Math.abs(revenueChange).toFixed(0)}% versus ${months[lastIdx - 1] || 'the prior month'}`;
+
+  const ebitdaText = ytdEbitda >= 0
+    ? `EBITDA is positive at ${fmtUSD(ytdEbitda)} (${fmtPct(ytdEbitdaPct)} margin)`
+    : `EBITDA remains negative at ${fmtUSD(ytdEbitda)} (${fmtPct(ytdEbitdaPct)} margin)`;
+
+  const pbtText = ytdPbt >= 0
+    ? `PBT is positive at ${fmtUSD(ytdPbt)}`
+    : `PBT remains negative at ${fmtUSD(ytdPbt)}`;
+
+  const driverText = ytdPbt < 0
+    ? `Depreciation of ${fmtUSD(depreciation)} and finance charges of ${fmtUSD(financeCharges)} are the main below-EBITDA charges`
+    : `Depreciation of ${fmtUSD(depreciation)} and finance charges of ${fmtUSD(financeCharges)} are the main below-EBITDA charges`;
+
+  const text =
+    `YTD revenue is ${fmtUSD(ytdRevenue)}. ${revenueTrend}, making it the current peak month. ` +
+    `Gross margin is ${fmtPct(ytdGmPct)} YTD and has ranged from ${fmtPct(gmMin)} to ${fmtPct(gmMax)} across the reported months. ` +
+    `${ebitdaText}, while ${pbtText}. ${driverText}.`;
+
+  document.getElementById('execSummaryText').textContent = text;
+
+  const source = document.getElementById('execSummarySource');
+  if (source) {
+    source.innerHTML =
+      `Automatically generated from <code>financials.json</code> · Last updated: ${lastMonth}.`;
+  }
 }
 
 function renderKPIs(D){
@@ -677,15 +755,16 @@ function renderTable(D){
 async function main(){
   try {
     await loadData();
+    renderExecutiveSummary(D);
     renderKPIs(D);
     buildCharts(D);
     renderTable(D);
   } catch (err) {
     document.getElementById('asOfLabel').textContent = 'DATA LOAD ERROR';
     document.getElementById('execSummaryText').textContent =
-      'Could not load data/financials.json — ' + err.message +
-      '. If you opened this file directly (file://), serve the folder over ' +
-      'HTTP instead, e.g. run "python -m http.server" in the project root.';
+      'Dashboard error: ' + err.message +
+      '. Check that financials.json is committed to the GitHub repository and that Chart.js can be loaded from the CDN. ' +
+      'Open the browser Developer Tools (F12 → Console) if the problem persists.';
     console.error(err);
   }
 }
