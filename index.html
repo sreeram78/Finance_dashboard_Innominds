@@ -361,6 +361,202 @@ async function main(){
  }
 }
 main();
+
+
+/* ================= CFO DATA ASSISTANT =================
+   This version is intentionally API-key-free and GitHub-Pages safe.
+   It answers using the same financial data already loaded into D.
+   A secure Azure OpenAI endpoint can be connected later without
+   exposing credentials in this HTML.
+*/
+(function(){
+  const toggle=document.getElementById('cfoChatToggle');
+  const panel=document.getElementById('cfoChat');
+  const close=document.getElementById('cfoChatClose');
+  const messages=document.getElementById('cfoChatMessages');
+  const form=document.getElementById('cfoChatForm');
+  const input=document.getElementById('cfoChatInput');
+
+  function addMessage(text,who){
+    const el=document.createElement('div');
+    el.className='cfo-msg '+who;
+    el.textContent=text;
+    messages.appendChild(el);
+    messages.scrollTop=messages.scrollHeight;
+  }
+
+  function money(v){
+    const a=Math.abs(v);
+    const s=a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0);
+    return (v<0?'-$':'$')+s;
+  }
+  function percent(v){return (v*100).toFixed(1)+'%'}
+  function idx(){return lastIdx(D.revenue.total)}
+  function latestMonth(){return D.months[idx()]}
+  function sum(a){return (a||[]).reduce((x,y)=>x+(Number(y)||0),0)}
+  function topSga(){
+    return Object.entries(D.sga_breakdown_ytd||{}).sort((a,b)=>b[1]-a[1]).slice(0,5)
+  }
+
+  function answer(q){
+    if(!D) return 'The financial data has not finished loading yet.';
+
+    const x=q.toLowerCase().trim();
+    const i=idx(), m=latestMonth();
+    const revenue=D.ytd.revenue, ebitda=D.ytd.ebitda, pbt=D.ytd.pbt;
+
+    if(/^(hi|hello|hey)\b/.test(x))
+      return `Hello. I’m your CFO data assistant. I can analyse the financial data currently loaded into the dashboard. Try asking about revenue, margin, EBITDA, PBT, SG&A, revenue mix or a specific month.`;
+
+    if(x.includes('ytd revenue') || x.includes('revenue ytd') || x.includes('total revenue'))
+      return `YTD revenue is ${money(revenue)} through ${m}. ${m} revenue is ${money(D.revenue.total[i])}. The strongest reported month is ${D.months[D.revenue.total.indexOf(Math.max(...D.revenue.total))]} at ${money(Math.max(...D.revenue.total))}.`;
+
+    if(x.includes('revenue mix') || x.includes('product') || x.includes('service') || x.includes('subscription')){
+      const p=sum(D.revenue.product), s=sum(D.revenue.service), sub=sum(D.revenue.subscription);
+      const current=`${m}: Product ${money(D.revenue.product[i])} (${(D.revenue.product[i]/D.revenue.total[i]*100).toFixed(0)}%), Services ${money(D.revenue.service[i])} (${(D.revenue.service[i]/D.revenue.total[i]*100).toFixed(0)}%), Subscription ${money(D.revenue.subscription[i])} (${(D.revenue.subscription[i]/D.revenue.total[i]*100).toFixed(0)}%).`;
+      return `Revenue mix analysis:\n${current}\nYTD mix: Product ${(p/revenue*100).toFixed(0)}%, Services ${(s/revenue*100).toFixed(0)}%, Subscription ${(sub/revenue*100).toFixed(0)}%.`;
+    }
+
+    if(x.includes('gross margin') || x.includes('gm')){
+      const min=Math.min(...D.gm_pct), max=Math.max(...D.gm_pct);
+      return `YTD gross margin is ${percent(D.ytd.gm_pct)}. Monthly gross margin ranges from ${percent(min)} to ${percent(max)}. ${m} gross margin is ${percent(D.gm_pct[i])}.`;
+    }
+
+    if(x.includes('ebitda')){
+      return `YTD EBITDA is ${money(ebitda)}, a ${percent(D.ytd.ebitda_pct)} margin. ${m} EBITDA is ${money(D.ebitda[i])}. `+
+        (ebitda>=0?'EBITDA is positive YTD.':'EBITDA is negative YTD.');
+    }
+
+    if(x.includes('pbt') || x.includes('profit before tax') || x.includes('why') && x.includes('negative')){
+      return `YTD PBT is ${money(pbt)}. EBITDA is ${money(ebitda)}, so the gap below EBITDA is ${money(pbt-ebitda)}. `+
+        `The major reported below-EBITDA charges are depreciation of ${money(D.ytd.depreciation)} and finance charges of ${money(D.ytd.finance_charges)}.`;
+    }
+
+    if(x.includes('sga') || x.includes('sg&a') || x.includes('expense') || x.includes('cost')){
+      const top=topSga();
+      const total=D.ytd.sga;
+      return `YTD SG&A is ${money(total)}.\nTop drivers:\n`+
+        top.map((e,n)=>`${n+1}. ${e[0]} — ${money(e[1])} (${(e[1]/total*100).toFixed(1)}%)`).join('\n');
+    }
+
+    if(x.includes('august') || x.includes('latest month') || x.includes('current month')){
+      const prev=i>0?D.revenue.total[i-1]:0;
+      const mom=prev?((D.revenue.total[i]-prev)/Math.abs(prev)*100):0;
+      return `${m} performance:\nRevenue ${money(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM)\n`+
+        `Gross margin ${percent(D.gm_pct[i])}\nEBITDA ${money(D.ebitda[i])}\nPBT ${money(D.pbt[i])}`;
+    }
+
+    if(x.includes('best month') || x.includes('highest revenue')){
+      const j=D.revenue.total.indexOf(Math.max(...D.revenue.total));
+      return `The strongest reported revenue month is ${D.months[j]} at ${money(D.revenue.total[j])}.`;
+    }
+
+    if(x.includes('risk') || x.includes('concern') || x.includes('problem')){
+      const product=sum(D.revenue.product)/revenue;
+      return `Key management watch-outs from the loaded data:\n`+
+        `• PBT is ${money(pbt)} YTD.\n`+
+        `• Product revenue represents ${(product*100).toFixed(0)}% of YTD revenue.\n`+
+        `• SG&A is ${money(D.ytd.sga)}, equal to ${(D.ytd.sga/revenue*100).toFixed(1)}% of revenue.\n`+
+        `• Depreciation and finance charges total ${money(D.ytd.depreciation+D.ytd.finance_charges)}.`;
+    }
+
+    return `I can answer questions using the dashboard data, but I didn't recognise that question yet.\nTry: "What is YTD revenue?", "Why is PBT negative?", "What is driving SG&A?", "How is August performing?", or "What is our revenue mix?"`;
+  }
+
+  toggle.addEventListener('click',()=>{
+    panel.classList.toggle('open');
+    panel.setAttribute('aria-hidden',panel.classList.contains('open')?'false':'true');
+    if(panel.classList.contains('open') && !messages.children.length)
+      addMessage('I’m connected to the financial data loaded into this dashboard. What would you like to know?','bot');
+    if(panel.classList.contains('open')) input.focus();
+  });
+  close.addEventListener('click',()=>panel.classList.remove('open'));
+
+  document.querySelectorAll('.cfo-chat-suggestions button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const q=b.dataset.q;
+      addMessage(q,'user');
+      setTimeout(()=>addMessage(answer(q),'bot'),150);
+    });
+  });
+
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const q=input.value.trim();
+    if(!q)return;
+    addMessage(q,'user');
+    input.value='';
+    setTimeout(()=>addMessage(answer(q),'bot'),150);
+  });
+})();
+
 </script>
+
+<!-- CFO AI CHATBOT -->
+<button id="cfoChatToggle" class="cfo-chat-toggle" aria-label="Open CFO AI Assistant">✦</button>
+
+<div id="cfoChat" class="cfo-chat" aria-hidden="true">
+  <div class="cfo-chat-head">
+    <div>
+      <strong>Ask CFO</strong>
+      <span>Data-aware financial assistant</span>
+    </div>
+    <button id="cfoChatClose" aria-label="Close">×</button>
+  </div>
+
+  <div class="cfo-chat-status">
+    <span class="cfo-status-dot"></span>
+    Connected to dashboard data
+  </div>
+
+  <div id="cfoChatMessages" class="cfo-chat-messages"></div>
+
+  <div class="cfo-chat-suggestions">
+    <button data-q="What is our YTD revenue?">YTD revenue</button>
+    <button data-q="Why is PBT negative?">Why is PBT negative?</button>
+    <button data-q="What is driving SG&A?">SG&A drivers</button>
+    <button data-q="How is August performing?">August performance</button>
+  </div>
+
+  <form id="cfoChatForm" class="cfo-chat-form">
+    <input id="cfoChatInput" autocomplete="off" placeholder="Ask about revenue, EBITDA, PBT, margin..." />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<style>
+.cfo-chat-toggle{
+  position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:0;border-radius:50%;
+  background:var(--navy);color:#fff;font-size:25px;box-shadow:0 8px 28px rgba(9,43,82,.28);
+  cursor:pointer;z-index:1000
+}
+.cfo-chat-toggle:hover{transform:translateY(-2px)}
+.cfo-chat{
+  position:fixed;right:24px;bottom:94px;width:390px;max-width:calc(100vw - 28px);height:590px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 55px rgba(9,43,82,.22);
+  z-index:999;display:none;overflow:hidden
+}
+.cfo-chat.open{display:flex;flex-direction:column}
+.cfo-chat-head{background:var(--navy);color:#fff;padding:15px 16px;display:flex;justify-content:space-between;align-items:center}
+.cfo-chat-head strong{display:block;font-size:14px}.cfo-chat-head span{display:block;color:#c8d8ea;font-size:10px;margin-top:2px}
+.cfo-chat-head button{background:transparent;border:0;color:#fff;font-size:24px;cursor:pointer}
+.cfo-chat-status{font-size:10px;color:var(--muted);padding:8px 13px;border-bottom:1px solid var(--line)}
+.cfo-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
+.cfo-chat-messages{flex:1;overflow:auto;padding:13px;background:#f7f9fb}
+.cfo-msg{max-width:88%;padding:9px 11px;border-radius:8px;margin:7px 0;font-size:11.5px;line-height:1.5;white-space:pre-wrap}
+.cfo-msg.bot{background:#fff;border:1px solid var(--line);color:var(--ink);margin-right:auto}
+.cfo-msg.user{background:var(--navy);color:#fff;margin-left:auto}
+.cfo-chat-suggestions{display:flex;gap:5px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid var(--line)}
+.cfo-chat-suggestions button{border:1px solid #cbd6e1;background:#fff;color:var(--navy);border-radius:14px;padding:5px 8px;font-size:9.5px;cursor:pointer}
+.cfo-chat-form{display:flex;gap:7px;padding:10px;border-top:1px solid var(--line);background:#fff}
+.cfo-chat-form input{flex:1;min-width:0;border:1px solid #cbd6e1;border-radius:5px;padding:9px;font:inherit;font-size:11px;outline:none}
+.cfo-chat-form input:focus{border-color:var(--blue)}
+.cfo-chat-form button{border:0;background:var(--orange);color:#fff;border-radius:5px;padding:0 13px;font-size:11px;font-weight:700;cursor:pointer}
+@media(max-width:500px){
+ .cfo-chat{right:10px;bottom:82px;width:calc(100vw - 20px);height:70vh}
+ .cfo-chat-toggle{right:14px;bottom:14px}
+}
+</style>
+
 </body>
 </html>
