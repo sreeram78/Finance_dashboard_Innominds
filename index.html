@@ -46,6 +46,32 @@ h1{max-width:1450px;margin:14px auto 0;font-family:Fraunces,Georgia,serif;font-s
 .chart.tall{height:330px}
 .revenue-mix-card{min-height:410px}
 .revenue-mix-chart{height:355px}
+.revenue-mix-chart{display:flex;align-items:center;justify-content:center}
+.revenue-mix-chart canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.donut-center{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  pointer-events:none;
+  z-index:2;
+  width:170px;
+}
+.donut-total{
+  font-family:Fraunces,Georgia,serif;
+  font-weight:600;
+  font-size:30px;
+  line-height:1.05;
+  color:var(--navy);
+}
+.donut-label{
+  margin-top:8px;
+  font-size:15px;
+  line-height:1.2;
+  color:var(--muted);
+  font-weight:500;
+}
 .card-title{font-weight:700;color:var(--navy);font-size:12px;margin-bottom:2px}
 .card-sub{font-size:10px;color:var(--muted);margin-bottom:10px}
 .legend{font-size:10px;color:var(--muted);margin-bottom:5px}
@@ -96,7 +122,13 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
     <div class="grid g3" style="margin-top:12px">
       <div class="card round"><div class="card-title">Revenue trend</div><div class="card-sub">Monthly total revenue</div><div class="chart"><canvas id="summaryRevenue"></canvas></div></div>
       <div class="card round"><div class="card-title">EBITDA trend</div><div class="card-sub">Monthly EBITDA</div><div class="chart"><canvas id="summaryEbitda"></canvas></div></div>
-      <div class="card round revenue-mix-card"><div class="card-title">Revenue mix — current month</div><div class="card-sub" id="mixPeriod">Latest reported month</div><div class="chart revenue-mix-chart"><canvas id="summaryMix"></canvas></div></div>
+      <div class="card round revenue-mix-card"><div class="card-title">Revenue mix — current month</div><div class="card-sub" id="mixPeriod">Latest reported month</div><div class="chart revenue-mix-chart">
+        <canvas id="summaryMix"></canvas>
+        <div class="donut-center" id="donutCenter">
+          <div class="donut-total" id="donutTotal">$0</div>
+          <div class="donut-label">Total revenue</div>
+        </div>
+      </div></div>
     </div>
   </div>
 </section>
@@ -234,24 +266,7 @@ function render(){
   document.getElementById('mixPeriod').textContent=m+' · latest reported month';
   const mp=D.revenue.product[i], ms=D.revenue.subscription[i], mv=D.revenue.service[i];
   const mixTotal = mp + ms + mv;
-  const mixCenterPlugin = {
-    id:'mixCenterPlugin',
-    afterDraw(chart){
-      const meta=chart.getDatasetMeta(0);
-      if(!meta || !meta.data || !meta.data.length) return;
-      const x=meta.data[0].x, y=meta.data[0].y, ctx=chart.ctx;
-      ctx.save();
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.fillStyle=C.navy;
-      ctx.font="600 30px Fraunces, Georgia, serif";
-      ctx.fillText(usd(mixTotal),x,y-12);
-      ctx.fillStyle=C.muted;
-      ctx.font="500 15px IBM Plex Sans, Arial, sans-serif";
-      ctx.fillText('Total revenue',x,y+21);
-      ctx.restore();
-    }
-  };
+  document.getElementById('donutTotal').textContent = usd(mixTotal);
 
   make('summaryMix','doughnut',{
     labels:['Product','Subscription','Services'],
