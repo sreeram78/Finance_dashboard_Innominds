@@ -166,11 +166,14 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 </section>
 
 <section class="section" id="bs">
-  <div class="section-title">Detailed Balance Sheet Analysis <span>Assets · Liabilities · Equity</span></div>
-  <div class="grid g3">
-    <div class="placeholder"><div><strong>Balance Sheet KPIs</strong>Upload/extend the financial JSON with cash, receivables, inventory, payables, debt and equity to activate this view.</div></div>
-    <div class="placeholder"><div><strong>Working Capital Analysis</strong>Receivables, inventory and payables trends will appear here once balance-sheet data is available.</div></div>
-    <div class="placeholder"><div><strong>Balance Sheet Movement</strong>Monthly and YTD asset / liability movement will be visualised here.</div></div>
+  <div class="section-title">Detailed Balance Sheet Analysis <span id="bsPeriod">Latest reported months</span></div>
+  <div class="card">
+    <div class="grid g4" id="bsKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Assets composition</div><div class="card-sub">Latest reported month</div><div class="chart tall"><canvas id="bsAssets"></canvas></div></div>
+      <div class="card round"><div class="card-title">Liabilities & equity</div><div class="card-sub">Latest reported month</div><div class="chart tall"><canvas id="bsLiabilities"></canvas></div></div>
+    </div>
+    <div class="card round" style="margin-top:12px;overflow:auto"><div class="card-title">Balance Sheet movement</div><div class="card-sub">Reported monthly balances</div><table id="bsTable"></table></div>
   </div>
 </section>
 
@@ -184,11 +187,13 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 </section>
 
 <section class="section" id="cf">
-  <div class="section-title">Detailed Cash Flow Statement Analysis <span>CFO · CFI · CFF</span></div>
-  <div class="grid g3">
-    <div class="placeholder"><div><strong>Operating Cash Flow</strong>Requires cash-flow statement data.</div></div>
-    <div class="placeholder"><div><strong>Free Cash Flow</strong>Will calculate CFO less capital expenditure.</div></div>
-    <div class="placeholder"><div><strong>Cash Flow Bridge</strong>Operating, investing and financing movements will appear here.</div></div>
+  <div class="section-title">Detailed Cash Flow Analysis <span>FCF · Working Capital · Capex</span></div>
+  <div class="card">
+    <div class="grid g3" id="cfKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Free cash flow bridge</div><div class="card-sub">Latest reported workbook values</div><div class="chart tall"><canvas id="cfBridge"></canvas></div></div>
+      <div class="card round"><div class="card-title">Cash position</div><div class="card-sub">Balance Sheet cash & bank</div><div class="chart tall"><canvas id="cashTrend"></canvas></div></div>
+    </div>
   </div>
 </section>
 
@@ -241,6 +246,30 @@ function make(id,type,data,options={}){
   const ch=new Chart(el,{type,data,options});charts.push(ch);return ch;
 }
 
+function renderBalanceSheet(){
+  const B=D.balance_sheet||{}; const months=B.months||[]; const n=months.length; if(!n)return;
+  const i=n-1, m=months[i];
+  const get=k=>(B[k]||[])[i]||0;
+  const currentAssets=get('trade_receivables')+get('inventory')+get('cash')+get('other_assets');
+  const currentLiab=get('trade_payables')+get('deferred_revenue')+get('other_liabilities');
+  const wc=currentAssets-currentLiab;
+  const ratio=currentLiab?currentAssets/currentLiab:0;
+  document.getElementById('bsPeriod').textContent=m+' latest reported';
+  const cards=[['Total Assets',usd(get('total_assets')),''],['Cash & Bank',usd(get('cash')),''],['Working Capital',usd(wc),''],['Current Ratio',ratio.toFixed(2)+'x','']];
+  document.getElementById('bsKpis').innerHTML=cards.map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  make('bsAssets','bar',{labels:['PP&E','Receivables','Inventory','Cash','Other assets'],datasets:[{label:m,data:[get('ppe'),get('trade_receivables'),get('inventory'),get('cash'),get('other_assets')],backgroundColor:[C.navy,C.blue,C.orange,C.green,'#9CC0FA']}]},{...commonOptions(),plugins:{legend:{display:false}}});
+  make('bsLiabilities','bar',{labels:["Shareholder's Fund",'Debt','Payables','Deferred revenue','Other liabilities'],datasets:[{label:m,data:[get('shareholders_fund'),get('debts'),get('trade_payables'),get('deferred_revenue'),get('other_liabilities')],backgroundColor:[C.navy,C.orange,C.blue,'#9CC0FA',C.green]}]},{...commonOptions(),plugins:{legend:{display:false}}});
+  const fields=[['Total Assets','total_assets'],['PP&E','ppe'],['Trade Receivables','trade_receivables'],['Inventory','inventory'],['Cash & Bank','cash'],['Other Assets','other_assets'],["Shareholder's Fund",'shareholders_fund'],['Debts','debts'],['Trade Payables','trade_payables'],['Deferred Revenue','deferred_revenue'],['Other Liabilities','other_liabilities'],['Total Eq. & Liability','total_equity_liability']];
+  let t='<thead><tr><th>Particulars</th>'+months.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
+  fields.forEach(([label,key])=>{t+=`<tr class="${key==='total_assets'||key==='total_equity_liability'?'total':''}"><td>${label}</td>`;(B[key]||[]).forEach(v=>t+=`<td class="${v<0?'neg':''}">${usd(v)}</td>`);t+='</tr>'}); t+='</tbody>'; document.getElementById('bsTable').innerHTML=t;
+}
+function renderCashFlow(){
+  const F=D.cash_flow||{}; const B=D.balance_sheet||{}; const months=B.months||[]; const cash=B.cash||[];
+  document.getElementById('cfKpis').innerHTML=[['Free Cash Flow',usd(F.fcf||0),'Latest workbook value','green'],['Change in Working Capital',usd(F.change_wc||0),'Latest workbook value',(F.change_wc||0)<0?'red':'green'],['Change in Capex',usd(F.change_capex||0),'Latest workbook value',(F.change_capex||0)>0?'red':'green']].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  const base=F.fcf||0, wc=F.change_wc||0, cap=F.change_capex||0;
+  make('cfBridge','bar',{labels:['Change in WC','Change in Capex','Free Cash Flow'],datasets:[{label:'USD',data:[wc,cap,base],backgroundColor:[wc<0?C.red:C.green,cap>0?C.red:C.green,C.navy]}]}, {...commonOptions(),plugins:{legend:{display:false}}});
+  if(months.length) make('cashTrend','line',{labels:months,datasets:[{label:'Cash & Bank',data:cash,borderColor:C.green,backgroundColor:C.green,tension:.25}]},commonOptions());
+}
 function render(){
   const i=lastIdx(D.revenue.total), m=D.months[i];
   document.getElementById('asof').textContent='DATA AS OF '+m.toUpperCase()+' · PROVISIONAL';
@@ -353,7 +382,7 @@ function render(){
 }
 
 async function main(){
- try{await loadData();render()}
+ try{await loadData();render();renderBalanceSheet();renderCashFlow()}
  catch(e){
    document.getElementById('asof').textContent='DATA LOAD ERROR';
    document.getElementById('executiveSummary').innerHTML='<b>Unable to load financials.json.</b> Check that the file is located at <code>data/financials.json</code> in the GitHub repository and that GitHub Pages has deployed the latest commit. Error: '+e.message;
