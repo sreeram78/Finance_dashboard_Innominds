@@ -375,8 +375,8 @@ async function loadData() {
   // documented data/ location and a root-level financials.json so the
   // dashboard still works if the JSON was committed beside index.html.
   const candidates = [
-    './data/financials.json',
-    './financials.json'
+    new URL('./financials.json', document.baseURI).href,
+    new URL('./data/financials.json', document.baseURI).href
   ];
 
   let lastError = null;
@@ -401,9 +401,56 @@ async function loadData() {
 
 const INK = '#0F2A43', STEEL='#1B3A5C', ACCENT='#1F6FEB', ACCENT_SOFT='#9CC0FA', POS='#1E7145', NEG='#AE3A2E', MUTED='#5C6670', LINE='#DEE2E2';
 
-Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
-Chart.defaults.font.size = 12;
-Chart.defaults.color = MUTED;
+function configureChartJs(){
+  if (typeof Chart === 'undefined') return false;
+  Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = MUTED;
+  return true;
+}
+
+function loadChartJsFallback(){
+  return new Promise((resolve, reject) => {
+    if (typeof Chart !== 'undefined') {
+      configureChartJs();
+      resolve();
+      return;
+    }
+
+    const sources = [
+      'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+      'https://unpkg.com/chart.js@4.4.4/dist/chart.umd.min.js'
+    ];
+
+    let i = 0;
+    const tryNext = () => {
+      if (typeof Chart !== 'undefined') {
+        configureChartJs();
+        resolve();
+        return;
+      }
+      if (i >= sources.length) {
+        reject(new Error('Chart.js could not be loaded from the CDN.'));
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = sources[i++];
+      script.onload = () => {
+        if (typeof Chart !== 'undefined') {
+          configureChartJs();
+          resolve();
+        } else {
+          tryNext();
+        }
+      };
+      script.onerror = tryNext;
+      document.head.appendChild(script);
+    };
+
+    tryNext();
+  });
+}
 
 function fmtM(v){
   const abs = Math.abs(v);
@@ -754,11 +801,24 @@ function renderTable(D){
 
 async function main(){
   try {
+    // Load the financial data first so the executive summary can render
+    // even if a chart library/CDN is temporarily unavailable.
     await loadData();
     renderExecutiveSummary(D);
     renderKPIs(D);
-    buildCharts(D);
     renderTable(D);
+
+    try {
+      await loadChartJsFallback();
+      buildCharts(D);
+    } catch (chartErr) {
+      console.warn(chartErr);
+      const chartNote = document.createElement('div');
+      chartNote.className = 'insight';
+      chartNote.style.marginTop = '20px';
+      chartNote.textContent = 'Financial data loaded successfully, but Chart.js could not be loaded. The KPI cards, executive summary and P&L table are still available.';
+      document.querySelector('.wrap').prepend(chartNote);
+    }
   } catch (err) {
     document.getElementById('asOfLabel').textContent = 'DATA LOAD ERROR';
     document.getElementById('execSummaryText').textContent =
