@@ -291,8 +291,8 @@
         </div>
       </div>
       <div class="card">
-        <h3>YTD revenue share</h3>
-        <div class="caption">Apr–Aug 2026 cumulative</div>
+        <h3>Revenue mix — current month</h3>
+        <div class="caption" id="mixDonutCaption">Latest reported month</div>
         <div class="chart-box" style="height:300px;">
           <canvas id="mixDonut"></canvas>
         </div>
@@ -640,25 +640,90 @@ new Chart(document.getElementById('mixChart'), {
   }
 });
 
-// 3. Revenue mix donut (YTD)
-const ytdProduct = D.revenue.product.reduce((a,b)=>a+b,0);
-const ytdService = D.revenue.service.reduce((a,b)=>a+b,0);
-const ytdSub = D.revenue.subscription.reduce((a,b)=>a+b,0);
+// 3. Revenue mix donut — latest reported month
+const lastMixIdx = lastActualIndex(D.revenue.total);
+const mixMonth = D.months[lastMixIdx];
+const mixProduct = D.revenue.product[lastMixIdx] || 0;
+const mixService = D.revenue.service[lastMixIdx] || 0;
+const mixSub = D.revenue.subscription[lastMixIdx] || 0;
+const mixTotal = mixProduct + mixService + mixSub;
+
+const mixCenterPlugin = {
+  id: 'mixCenterPlugin',
+  afterDraw(chart) {
+    const {ctx} = chart;
+    const meta = chart.getDatasetMeta(0);
+    if (!meta || !meta.data || !meta.data.length) return;
+
+    const x = meta.data[0].x;
+    const y = meta.data[0].y;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    ctx.font = "600 29px 'Fraunces', Georgia, serif";
+    ctx.fillStyle = INK;
+    ctx.fillText(fmtUSD(mixTotal), x, y - 13);
+
+    ctx.font = "16px 'IBM Plex Sans', Arial, sans-serif";
+    ctx.fillStyle = MUTED;
+    ctx.fillText('Total revenue', x, y + 20);
+    ctx.restore();
+  }
+};
+
+document.getElementById('mixDonutCaption').textContent =
+  `${mixMonth} · latest reported month`;
+
 new Chart(document.getElementById('mixDonut'), {
   type:'doughnut',
+  plugins:[mixCenterPlugin],
   data:{
-    labels:['Products','Services','Subscription'],
-    datasets:[{data:[ytdProduct, ytdService, ytdSub], backgroundColor:[INK, ACCENT, ACCENT_SOFT], borderWidth:2, borderColor:'#fff'}]
+    labels:['Product','Subscription','Services'],
+    datasets:[{
+      data:[mixProduct, mixSub, mixService],
+      backgroundColor:[INK, ACCENT_SOFT, '#C99A3A'],
+      borderWidth:3,
+      borderColor:'#fff',
+      hoverOffset:4
+    }]
   },
   options:{
-    responsive:true, maintainAspectRatio:false,
-    cutout:'62%',
+    responsive:true,
+    maintainAspectRatio:false,
+    cutout:'58%',
+    rotation:-90,
     plugins:{
-      legend:{position:'bottom', labels:{boxWidth:11,boxHeight:11,usePointStyle:true, padding:16}},
-      tooltip:{callbacks:{label:(ctx)=>{
-        const total = ytdProduct+ytdService+ytdSub;
-        return ` ${ctx.label}: ${fmtUSD(ctx.parsed)} (${(ctx.parsed/total*100).toFixed(0)}%)`;
-      }}}
+      legend:{
+        position:'bottom',
+        labels:{
+          boxWidth:34,
+          boxHeight:12,
+          padding:14,
+          font:{size:12.5},
+          generateLabels(chart) {
+            const dataset = chart.data.datasets[0];
+            const total = dataset.data.reduce((a,b)=>a+b,0);
+            return chart.data.labels.map((label, i) => ({
+              text: `${label} (${total ? Math.round(dataset.data[i] / total * 100) : 0}%)`,
+              fillStyle: dataset.backgroundColor[i],
+              strokeStyle: dataset.backgroundColor[i],
+              lineWidth: 0,
+              hidden: false,
+              index: i
+            }));
+          }
+        }
+      },
+      tooltip:{
+        callbacks:{
+          label:(ctx)=>{
+            const total = mixTotal;
+            return ` ${ctx.label}: ${fmtUSD(ctx.parsed)} (${total ? (ctx.parsed/total*100).toFixed(0) : 0}%)`;
+          }
+        }
+      }
     }
   }
 });
