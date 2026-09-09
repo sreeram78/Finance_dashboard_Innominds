@@ -213,7 +213,12 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
       <div class="card-title">CFO insights</div><div class="card-sub">Automatically derived from reported data</div>
       <div id="driverBullets"></div>
     </div>
-    <div class="card round"><div class="card-title">Revenue contribution by line</div><div class="card-sub">YTD actuals</div><div class="chart tall"><canvas id="revenueContribution"></canvas></div></div>
+    <div class="card round"><div class="card-title">Revenue contribution by line</div><div class="card-sub">YTD actuals</div><div class="chart tall"><canvas id="revenueContribution"></canvas>
+        <div class="donut-center" id="donutCenter">
+          <div class="donut-total" id="donutTotal">$0</div>
+          <div class="donut-label">Total revenue</div>
+        </div>
+      </div></div>
   </div>
 </section>
 
