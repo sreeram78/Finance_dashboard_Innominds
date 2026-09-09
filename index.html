@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nymi Inc — AI Enabled CFO Dashboard</title>
+<title>CFO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -107,13 +107,29 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 .sop-excel tbody td.neg{color:#c62828}
 .sop-excel tbody td.future{color:#666}
 .sop-note{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* Summary SOP column controls */
+.sop-controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.sop-controls button{border:1px solid #9da8b5;background:#f5f7fa;color:#17365d;border-radius:4px;padding:6px 10px;font:600 10.5px 'IBM Plex Sans',Arial,sans-serif;cursor:pointer}
+.sop-controls button:hover{background:#e7edf5}
+.sop-controls button.active{background:#315a96;color:#fff;border-color:#315a96}
+.sop-controls .hint{font-size:10.5px;color:var(--muted);margin-left:4px}
+.sop-excel th.col-hidden,.sop-excel td.col-hidden{display:none}
+.sop-excel th.col-collapsed,.sop-excel td.col-collapsed{width:30px!important;min-width:30px!important;max-width:30px!important;padding-left:3px!important;padding-right:3px!important;overflow:hidden}
+.sop-excel td.col-collapsed{color:transparent!important;font-size:0}
+.sop-excel th.col-collapsed .sop-head-label{display:none}
+.sop-head-label{vertical-align:middle}
+.sop-col-toggle{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:4px;padding:0;border:1px solid rgba(255,255,255,.65);border-radius:3px;background:rgba(255,255,255,.14);color:#fff;font:700 12px/1 Arial,sans-serif;cursor:pointer;vertical-align:middle}
+.sop-col-toggle:hover{background:rgba(255,255,255,.30)}
+.sop-col-toggle .toggle-icon{font-size:13px;line-height:1}
+.sop-individual-note{font-size:10px;color:var(--muted);margin:7px 0 0}
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="header-top">
-    <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
+    <div class="brand">NYMI</div>
     <div class="asof" id="asof">LOADING DATA…</div>
   </div>
   <h1>AI Enabled CFO Dashboard</h1>
@@ -174,6 +190,15 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
     <div class="card round" style="margin-top:12px">
       <div class="card-title">Summary SOP — MIS format</div>
       <div class="card-sub">Same column structure as the workbook: FY, quarterly and monthly headers. Green cells identify “Including BMS” columns from the MIS presentation.</div>
+      <div class="sop-controls" aria-label="Summary SOP column controls">
+        <button type="button" id="sopShowAll" class="active" onclick="setSopGroup('all')">Show all</button>
+        <button type="button" id="sopFY" onclick="toggleSopGroup('fy')">Collapse FY</button>
+        <button type="button" id="sopQtr" onclick="toggleSopGroup('qtr')">Collapse quarters</button>
+        <button type="button" id="sopFuture" onclick="toggleSopGroup('future')">Collapse future months</button>
+        <button type="button" id="sopFYQtr" onclick="setSopGroup('fyqtr')">Monthly view</button>
+        <span class="hint">Use the ⊖ / ⊕ icon directly on selected headers to collapse or expand one column.</span>
+      </div>
+      <div class="sop-individual-note">Selected headers have a <b>⊖</b> toggle. Click it to collapse the column to a narrow rail; click <b>⊕</b> to expand it again.</div>
       <div class="sop-wrap"><table id="sopTable" class="sop-excel"></table></div>
       <div class="sop-note">Source: Summary SOP tab · FY 2025-26 through FY 2026-27 · Apr-26 through Mar-27. Future months remain as reported in the workbook.</div>
     </div>
@@ -338,7 +363,8 @@ function renderSummarySOP(){
     return '$'+Math.round(n).toLocaleString('en-US');
   };
   let t='<thead><tr class="bms-row"><th colspan="2"></th><th></th><th></th><th class="bms">Including BMS</th><th></th><th></th><th class="bms">Including BMS</th><th colspan="4"></th><th class="bms">Including BMS</th><th colspan="7"></th></tr>';
-  t+='<tr><th>S No</th><th class="left">Particulars</th>'+h.map(x=>`<th>${esc(x)}</th>`).join('')+'</tr></thead><tbody>';
+  const individualCols=new Set([1,5,6,12,13,14,15,16,17,18]);
+  t+='<tr><th>S No</th><th class="left">Particulars</th>'+h.map((x,i)=>`<th data-sop-col="${i}" class="sop-col-${i}">${individualCols.has(i)?`<span class="sop-head-label">${esc(x)}</span><button type="button" class="sop-col-toggle" aria-label="Collapse or expand ${esc(x)}" title="Collapse/expand ${esc(x)}" onclick="event.stopPropagation();toggleSopColumn(${i})"><span class="toggle-icon">⊖</span></button>`:esc(x)}</th>`).join('')+'</tr></thead><tbody>';
   rows.forEach(r=>{
     const p=String(r.particulars??'').trim(), sno=String(r.sno??'').trim(), vals=Array.isArray(r.values)?r.values:[];
     const isSection=/^(Net Sales & Revenues:|Overall:|S&GA Expenses:)$/.test(p);
@@ -347,7 +373,7 @@ function renderSummarySOP(){
     const isTotal=['gross profit','gross margin','ebitda','profit before tax','profit after tax'].includes(lower);
     const cls=[isSection?'section-row':'',isTotal?'total-row':'',isPct?'pct-row':''].filter(Boolean).join(' ');
     t+=`<tr class="${cls}"><td class="sno">${esc(sno)}</td><td class="part">${esc(p)}</td>`;
-    for(let i=0;i<19;i++){const v=vals[i], neg=typeof v==='number'&&v<0, future=i>=11&&(v===0||v===null||v===undefined); t+=`<td class="${neg?'neg ':''}${future?'future':''}">${fmtSop(v,isPct)}</td>`;}
+    for(let i=0;i<19;i++){const v=vals[i], neg=typeof v==='number'&&v<0, future=i>=11&&(v===0||v===null||v===undefined); t+=`<td data-sop-col="${i}" class="sop-col-${i} ${neg?'neg ':''}${future?'future':''}">${fmtSop(v,isPct)}</td>`;}
     t+='</tr>';
   });
   t+='</tbody>'; document.getElementById('sopTable').innerHTML=t;
@@ -478,6 +504,45 @@ function render(){
   let run=0, bd=[], colors=[];
   bridge.forEach(([l,v])=>{if(['Revenue','Gross margin','EBITDA','PBT'].includes(l)){bd.push([0,v]);run=v;colors.push(C.navy)}else{const e=run+v;bd.push([Math.min(run,e),Math.max(run,e)]);run=e;colors.push(v<0?C.red:C.green)}});
   make('profitBridge','bar',{labels:bridge.map(x=>x[0]),datasets:[{data:bd,backgroundColor:colors}]},{...commonOptions(),plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}}}});
+}
+
+
+function toggleSopColumn(index){
+  const cells=document.querySelectorAll(`#sopTable [data-sop-col="${index}"]`);
+  if(!cells.length) return;
+  const header=document.querySelector(`#sopTable th[data-sop-col="${index}"]`);
+  const collapsed=header?.classList.contains('col-collapsed');
+  cells.forEach(el=>{el.classList.toggle('col-collapsed',!collapsed);el.classList.remove('col-hidden');});
+  const icon=header?.querySelector('.toggle-icon');
+  if(icon) icon.textContent=collapsed?'⊖':'⊕';
+  document.getElementById('sopShowAll')?.classList.remove('active');
+}
+
+function setSopGroup(mode){
+  const hidden = new Set();
+  if(mode==='fy'){ [0,1,2].forEach(i=>hidden.add(i)); }
+  if(mode==='qtr'){ [3,4,5,6].forEach(i=>hidden.add(i)); }
+  if(mode==='future'){ [12,13,14,15,16,17,18].forEach(i=>hidden.add(i)); }
+  if(mode==='fyqtr'){ [0,1,2,3,4,5,6].forEach(i=>hidden.add(i)); }
+  document.querySelectorAll('#sopTable [data-sop-col]').forEach(el=>{
+    const i=Number(el.getAttribute('data-sop-col'));
+    el.classList.toggle('col-hidden',hidden.has(i));
+    el.classList.remove('col-collapsed');
+  });
+  document.querySelectorAll('.sop-controls button').forEach(b=>b.classList.remove('active'));
+  const id={all:'sopShowAll',fy:'sopFY',qtr:'sopQtr',future:'sopFuture',fyqtr:'sopFYQtr'}[mode];
+  if(id) document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#sopTable .toggle-icon').forEach(icon=>icon.textContent='⊖');
+}
+
+function toggleSopGroup(group){
+  const map={fy:[0,1,2],qtr:[3,4,5,6],future:[12,13,14,15,16,17,18]};
+  const cols=map[group]||[];
+  const first=document.querySelector(`#sopTable [data-sop-col="${cols[0]}"]`);
+  const shouldHide=first ? !first.classList.contains('col-hidden') : true;
+  cols.forEach(i=>document.querySelectorAll(`#sopTable [data-sop-col="${i}"]`).forEach(el=>{el.classList.toggle('col-hidden',shouldHide);el.classList.remove('col-collapsed')}));
+  cols.forEach(i=>{const icon=document.querySelector(`#sopTable th[data-sop-col="${i}"] .toggle-icon`);if(icon) icon.textContent='⊖';});
+  document.getElementById('sopShowAll').classList.remove('active');
 }
 
 
@@ -627,7 +692,9 @@ main();
     if(x.includes('revenue mix') || x.includes('product') || x.includes('service') || x.includes('subscription')){
       const p=sum(D.revenue.product), s=sum(D.revenue.service), sub=sum(D.revenue.subscription);
       const current=`${m}: Product ${money(D.revenue.product[i])} (${(D.revenue.product[i]/D.revenue.total[i]*100).toFixed(0)}%), Services ${money(D.revenue.service[i])} (${(D.revenue.service[i]/D.revenue.total[i]*100).toFixed(0)}%), Subscription ${money(D.revenue.subscription[i])} (${(D.revenue.subscription[i]/D.revenue.total[i]*100).toFixed(0)}%).`;
-      return `Revenue mix analysis:\n${current}\nYTD mix: Product ${(p/revenue*100).toFixed(0)}%, Services ${(s/revenue*100).toFixed(0)}%, Subscription ${(sub/revenue*100).toFixed(0)}%.`;
+      return `Revenue mix analysis:
+${current}
+YTD mix: Product ${(p/revenue*100).toFixed(0)}%, Services ${(s/revenue*100).toFixed(0)}%, Subscription ${(sub/revenue*100).toFixed(0)}%.`;
     }
 
     if(x.includes('gross margin') || x.includes('gm')){
@@ -648,15 +715,22 @@ main();
     if(x.includes('sga') || x.includes('sg&a') || x.includes('expense') || x.includes('cost')){
       const top=topSga();
       const total=D.ytd.sga;
-      return `YTD SG&A is ${money(total)}.\nTop drivers:\n`+
-        top.map((e,n)=>`${n+1}. ${e[0]} — ${money(e[1])} (${(e[1]/total*100).toFixed(1)}%)`).join('\n');
+      return `YTD SG&A is ${money(total)}.
+Top drivers:
+`+
+        top.map((e,n)=>`${n+1}. ${e[0]} — ${money(e[1])} (${(e[1]/total*100).toFixed(1)}%)`).join('
+');
     }
 
     if(x.includes('august') || x.includes('latest month') || x.includes('current month')){
       const prev=i>0?D.revenue.total[i-1]:0;
       const mom=prev?((D.revenue.total[i]-prev)/Math.abs(prev)*100):0;
-      return `${m} performance:\nRevenue ${money(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM)\n`+
-        `Gross margin ${percent(D.gm_pct[i])}\nEBITDA ${money(D.ebitda[i])}\nPBT ${money(D.pbt[i])}`;
+      return `${m} performance:
+Revenue ${money(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM)
+`+
+        `Gross margin ${percent(D.gm_pct[i])}
+EBITDA ${money(D.ebitda[i])}
+PBT ${money(D.pbt[i])}`;
     }
 
     if(x.includes('best month') || x.includes('highest revenue')){
@@ -666,14 +740,19 @@ main();
 
     if(x.includes('risk') || x.includes('concern') || x.includes('problem')){
       const product=sum(D.revenue.product)/revenue;
-      return `Key management watch-outs from the loaded data:\n`+
-        `• PBT is ${money(pbt)} YTD.\n`+
-        `• Product revenue represents ${(product*100).toFixed(0)}% of YTD revenue.\n`+
-        `• SG&A is ${money(D.ytd.sga)}, equal to ${(D.ytd.sga/revenue*100).toFixed(1)}% of revenue.\n`+
+      return `Key management watch-outs from the loaded data:
+`+
+        `• PBT is ${money(pbt)} YTD.
+`+
+        `• Product revenue represents ${(product*100).toFixed(0)}% of YTD revenue.
+`+
+        `• SG&A is ${money(D.ytd.sga)}, equal to ${(D.ytd.sga/revenue*100).toFixed(1)}% of revenue.
+`+
         `• Depreciation and finance charges total ${money(D.ytd.depreciation+D.ytd.finance_charges)}.`;
     }
 
-    return `I can answer questions using the dashboard data, but I didn't recognise that question yet.\nTry: "What is YTD revenue?", "Why is PBT negative?", "What is driving SG&A?", "How is August performing?", or "What is our revenue mix?"`;
+    return `I can answer questions using the dashboard data, but I didn't recognise that question yet.
+Try: "What is YTD revenue?", "Why is PBT negative?", "What is driving SG&A?", "How is August performing?", or "What is our revenue mix?"`;
   }
 
   toggle.addEventListener('click',()=>{
