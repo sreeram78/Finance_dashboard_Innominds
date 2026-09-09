@@ -8,6 +8,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>
+if (typeof Chart === 'undefined') {
+  document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
+}
+</script>
 <style>
   :root{
     --ink:#0F2A43;
@@ -415,9 +420,11 @@ async function loadData() {
 
 const INK = '#0F2A43', STEEL='#1B3A5C', ACCENT='#1F6FEB', ACCENT_SOFT='#9CC0FA', POS='#1E7145', NEG='#AE3A2E', MUTED='#5C6670', LINE='#DEE2E2';
 
-Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
-Chart.defaults.font.size = 12;
-Chart.defaults.color = MUTED;
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = MUTED;
+}
 
 function fmtM(v){
   const abs = Math.abs(v);
@@ -484,6 +491,7 @@ function renderKPIs(D){
 }
 
 function buildCharts(D){
+if (typeof Chart === 'undefined') throw new Error('Chart.js failed to load from both CDNs. Check network/content-security settings.');
 // 1. Revenue trend combo
 new Chart(document.getElementById('revTrendChart'), {
   data: {
