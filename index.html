@@ -123,16 +123,41 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 .sop-col-toggle:hover{background:rgba(255,255,255,.30)}
 .sop-col-toggle .toggle-icon{font-size:13px;line-height:1}
 .sop-individual-note{font-size:10px;color:var(--muted);margin:7px 0 0}
+
+  .sop-donut-wrap{position:relative;}
+  .sop-donut-center{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-54%);
+    text-align:center;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .sop-donut-total{
+    font-family:'Fraunces',Georgia,serif;
+    font-size:28px;
+    line-height:1.05;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .sop-donut-label{
+    margin-top:6px;
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="header-top">
-    <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
+    <div class="brand">OFFICE OF THE CFO</div>
     <div class="asof" id="asof">LOADING DATA…</div>
   </div>
-  <h1>CFO Dashboard</h1>
+  <h1>AI Enabled CFO Dashboard</h1>
   <div class="subtitle">Executive performance, variance, profitability and financial statement analysis · FY2026–27</div>
   <nav class="nav">
     <a href="#summary">Executive Summary</a>
@@ -184,7 +209,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
   <div class="card">
     <div class="grid g4" id="sopKpis"></div>
     <div class="grid g2" style="margin-top:12px">
-      <div class="card round"><div class="card-title">Revenue by business line</div><div class="card-sub">FY 2026-27 YTD · Products, Services & Subscription</div><div class="chart tall"><canvas id="sopRevenueMix"></canvas></div></div>
+      <div class="card round"><div class="card-title">FY 2026-27 Revenue — Overall by business line</div><div class="card-sub">Overall FY 2026-27 · Products, Services & Subscription</div><div class="chart tall sop-donut-wrap"><canvas id="sopRevenueMix"></canvas><div id="sopDonutCenter" class="sop-donut-center"><div class="sop-donut-total">—</div><div class="sop-donut-label">Total revenue</div></div></div></div>
       <div class="card round"><div class="card-title">Profitability summary</div><div class="card-sub">FY 2026-27 YTD</div><div class="chart tall"><canvas id="sopProfitability"></canvas></div></div>
     </div>
     <div class="card round" style="margin-top:12px">
@@ -213,12 +238,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
       <div class="card-title">CFO insights</div><div class="card-sub">Automatically derived from reported data</div>
       <div id="driverBullets"></div>
     </div>
-    <div class="card round"><div class="card-title">Revenue contribution by line</div><div class="card-sub">YTD actuals</div><div class="chart tall"><canvas id="revenueContribution"></canvas>
-        <div class="donut-center" id="donutCenter">
-          <div class="donut-total" id="donutTotal">$0</div>
-          <div class="donut-label">Total revenue</div>
-        </div>
-      </div></div>
+    <div class="card round"><div class="card-title">Revenue contribution by line</div><div class="card-sub">YTD actuals</div><div class="chart tall"><canvas id="revenueContribution"></canvas></div></div>
   </div>
 </section>
 
@@ -383,21 +403,69 @@ function renderSummarySOP(){
   });
   t+='</tbody>'; document.getElementById('sopTable').innerHTML=t;
 
-  const find=name=>rows.find(r=>String(r.particulars??'').trim().toLowerCase()===name.toLowerCase());
-  const vals=name=>find(name)?.values||[];
-  const revenue=vals('Revenues'), gm=vals('Gross Margin'), ebitda=vals('EBITDA'), pbt=vals('Profit Before Tax');
-  const prod=vals('(i) Products:'), serv=vals('(ii) Services:'), sub=vals('(iii) Subscription:');
-  const fyRev=Number(revenue[2]||0), fyGm=Number(gm[2]||0), fyEb=Number(ebitda[2]||0), fyPbt=Number(pbt[2]||0);
-  const fyGmPct=fyRev?fyGm/fyRev:0, fyEbPct=fyRev?fyEb/fyRev:0, fyPbtPct=fyRev?fyPbt/fyRev:0;
-  const prodFy=Number(prod[2]||0), servFy=Number(serv[2]||0), subFy=Number(sub[2]||0);
+  // Summary SOP contains repeated labels (e.g. "Revenues" and "Gross Margin").
+  // Use the workbook row numbers / section context so the KPI cards always use
+  // the Overall section, while the donut uses the three business-line revenue rows.
+  const row = n => rows.find(r => Number(r.row) === n);
+  const v = n => row(n)?.values || [];
+
+  // Workbook row map:
+  // 8 Products revenue; 13 Services revenue; 18 Subscription revenue;
+  // 23 Overall revenue; 25 Overall gross margin; 31 EBITDA; 36 PBT.
+  const prodFy = Number(v(8)[2] || 0);
+  const servFy = Number(v(13)[2] || 0);
+  const subFy  = Number(v(18)[2] || 0);
+
+  const fyRev = Number(v(23)[2] || 0);
+  const fyGm  = Number(v(25)[2] || 0);
+  const fyEb  = Number(v(31)[2] || 0);
+  const fyPbt = Number(v(36)[2] || 0);
+
+  const fyGmPct = fyRev ? fyGm / fyRev : 0;
+  const fyEbPct = fyRev ? fyEb / fyRev : 0;
+  const fyPbtPct = fyRev ? fyPbt / fyRev : 0;
+
   document.getElementById('sopKpis').innerHTML=[
-    ['FY 2026-27 Revenue',usd(fyRev),'Summary SOP',''],
-    ['Gross Margin',usd(fyGm),pct(fyGmPct)+' margin','green'],
-    ['EBITDA',usd(fyEb),pct(fyEbPct)+' margin',fyEb>=0?'green':'red'],
-    ['Profit Before Tax',usd(fyPbt),pct(fyPbtPct)+' margin',fyPbt>=0?'green':'red']
+    ['FY 2026-27 Revenue — Overall',usd(fyRev),'Overall · Summary SOP',''],
+    ['Gross Margin — Overall',usd(fyGm),pct(fyGmPct)+' margin','green'],
+    ['EBITDA — Overall',usd(fyEb),pct(fyEbPct)+' margin',fyEb>=0?'green':'red'],
+    ['Profit Before Tax — Overall',usd(fyPbt),pct(fyPbtPct)+' margin',fyPbt>=0?'green':'red']
   ].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
-  make('sopRevenueMix','doughnut',{labels:['Products','Services','Subscription'],datasets:[{data:[prodFy,servFy,subFy],backgroundColor:[C.navy,C.orange,'#9CC0FA'],borderWidth:3,borderColor:'#fff'}]},{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${usd(c.parsed)} (${fyRev?(c.parsed/fyRev*100).toFixed(1):0}%)`}}}});
-  make('sopProfitability','bar',{labels:['Revenue','Gross Margin','EBITDA','PBT'],datasets:[{label:'FY 2026-27',data:[fyRev,fyGm,fyEb,fyPbt],backgroundColor:[C.blue,C.green,fyEb>=0?C.green:C.red,fyPbt>=0?C.green:C.red]}]},{...commonOptions(),plugins:{legend:{display:false}}});
+
+  // Donut: business-line revenues add to the Overall FY 2026-27 revenue.
+  make('sopRevenueMix','doughnut',{
+    labels:['Products','Services','Subscription'],
+    datasets:[{
+      data:[prodFy,servFy,subFy],
+      backgroundColor:[C.navy,C.orange,'#9CC0FA'],
+      borderWidth:3,borderColor:'#fff'
+    }]
+  },{
+    responsive:true,
+    maintainAspectRatio:false,
+    cutout:'58%',
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{
+        label:c=>` ${c.label}: ${usd(c.parsed)} (${fyRev?(c.parsed/fyRev*100).toFixed(1):0}%)`
+      }}
+    }
+  });
+
+  const center = document.getElementById('sopDonutCenter');
+  if(center){
+    center.querySelector('.sop-donut-total').textContent = usd(fyRev);
+    center.querySelector('.sop-donut-label').textContent = 'Total revenue';
+  }
+
+  make('sopProfitability','bar',{
+    labels:['Revenue','Gross Margin','EBITDA','PBT'],
+    datasets:[{
+      label:'FY 2026-27 Overall',
+      data:[fyRev,fyGm,fyEb,fyPbt],
+      backgroundColor:[C.blue,C.green,fyEb>=0?C.green:C.red,fyPbt>=0?C.green:C.red]
+    }]
+  },{...commonOptions(),plugins:{legend:{display:false}}});
 }
 
 function render(){
