@@ -769,7 +769,14 @@ async function main(){
   try {
     await loadData();
     renderKPIs(D);
-    renderSummarySOP(D);
+    // Summary SOP is optional so a legacy financials.json cannot prevent charts from rendering.
+    if (D.summary_sop && Array.isArray(D.summary_sop.rows)) {
+      renderSummarySOP(D);
+    } else {
+      const el = document.getElementById('summarySopTable');
+      if (el) el.innerHTML = '<tbody><tr><td style="padding:18px;color:#5C6670;">Summary SOP data is not present in data/financials.json. Run the updated extraction script to populate it.</td></tr></tbody>';
+    }
+    if (typeof Chart === 'undefined') throw new Error('Chart.js could not be loaded. Check the Chart.js CDN/network connection.');
     buildCharts(D);
     renderTable(D);
   } catch (err) {
