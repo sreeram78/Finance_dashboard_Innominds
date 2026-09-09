@@ -107,6 +107,14 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 .sop-excel tbody td.neg{color:#c62828}
 .sop-excel tbody td.future{color:#666}
 .sop-note{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* Summary SOP column controls */
+.sop-controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.sop-controls button{border:1px solid #9da8b5;background:#f5f7fa;color:#17365d;border-radius:4px;padding:6px 10px;font:600 10.5px 'IBM Plex Sans',Arial,sans-serif;cursor:pointer}
+.sop-controls button:hover{background:#e7edf5}
+.sop-controls button.active{background:#315a96;color:#fff;border-color:#315a96}
+.sop-controls .hint{font-size:10.5px;color:var(--muted);margin-left:4px}
+.sop-excel th.col-hidden,.sop-excel td.col-hidden{display:none}
 </style>
 </head>
 <body>
@@ -174,6 +182,14 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
     <div class="card round" style="margin-top:12px">
       <div class="card-title">Summary SOP — MIS format</div>
       <div class="card-sub">Same column structure as the workbook: FY, quarterly and monthly headers. Green cells identify “Including BMS” columns from the MIS presentation.</div>
+      <div class="sop-controls" aria-label="Summary SOP column controls">
+        <button type="button" id="sopShowAll" class="active" onclick="setSopGroup('all')">Show all</button>
+        <button type="button" id="sopFY" onclick="toggleSopGroup('fy')">Collapse FY</button>
+        <button type="button" id="sopQtr" onclick="toggleSopGroup('qtr')">Collapse quarters</button>
+        <button type="button" id="sopFuture" onclick="toggleSopGroup('future')">Collapse future months</button>
+        <button type="button" id="sopFYQtr" onclick="setSopGroup('fyqtr')">Monthly view</button>
+        <span class="hint">Click a control to reduce the table width. Click “Show all” to restore the MIS view.</span>
+      </div>
       <div class="sop-wrap"><table id="sopTable" class="sop-excel"></table></div>
       <div class="sop-note">Source: Summary SOP tab · FY 2025-26 through FY 2026-27 · Apr-26 through Mar-27. Future months remain as reported in the workbook.</div>
     </div>
@@ -338,7 +354,7 @@ function renderSummarySOP(){
     return '$'+Math.round(n).toLocaleString('en-US');
   };
   let t='<thead><tr class="bms-row"><th colspan="2"></th><th></th><th></th><th class="bms">Including BMS</th><th></th><th></th><th class="bms">Including BMS</th><th colspan="4"></th><th class="bms">Including BMS</th><th colspan="7"></th></tr>';
-  t+='<tr><th>S No</th><th class="left">Particulars</th>'+h.map(x=>`<th>${esc(x)}</th>`).join('')+'</tr></thead><tbody>';
+  t+='<tr><th>S No</th><th class="left">Particulars</th>'+h.map((x,i)=>`<th data-sop-col="${i}" class="sop-col-${i}">${esc(x)}</th>`).join('')+'</tr></thead><tbody>';
   rows.forEach(r=>{
     const p=String(r.particulars??'').trim(), sno=String(r.sno??'').trim(), vals=Array.isArray(r.values)?r.values:[];
     const isSection=/^(Net Sales & Revenues:|Overall:|S&GA Expenses:)$/.test(p);
@@ -347,7 +363,7 @@ function renderSummarySOP(){
     const isTotal=['gross profit','gross margin','ebitda','profit before tax','profit after tax'].includes(lower);
     const cls=[isSection?'section-row':'',isTotal?'total-row':'',isPct?'pct-row':''].filter(Boolean).join(' ');
     t+=`<tr class="${cls}"><td class="sno">${esc(sno)}</td><td class="part">${esc(p)}</td>`;
-    for(let i=0;i<19;i++){const v=vals[i], neg=typeof v==='number'&&v<0, future=i>=11&&(v===0||v===null||v===undefined); t+=`<td class="${neg?'neg ':''}${future?'future':''}">${fmtSop(v,isPct)}</td>`;}
+    for(let i=0;i<19;i++){const v=vals[i], neg=typeof v==='number'&&v<0, future=i>=11&&(v===0||v===null||v===undefined); t+=`<td data-sop-col="${i}" class="sop-col-${i} ${neg?'neg ':''}${future?'future':''}">${fmtSop(v,isPct)}</td>`;}
     t+='</tr>';
   });
   t+='</tbody>'; document.getElementById('sopTable').innerHTML=t;
@@ -479,7 +495,7 @@ function render(){
   bridge.forEach(([l,v])=>{if(['Revenue','Gross margin','EBITDA','PBT'].includes(l)){bd.push([0,v]);run=v;colors.push(C.navy)}else{const e=run+v;bd.push([Math.min(run,e),Math.max(run,e)]);run=e;colors.push(v<0?C.red:C.green)}});
   make('profitBridge','bar',{labels:bridge.map(x=>x[0]),datasets:[{data:bd,backgroundColor:colors}]},{...commonOptions(),plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}}}});
 }
-
+\n\nfunction setSopGroup(mode){\n  const hidden = new Set();\n  if(mode==='fy'){ [0,1,2].forEach(i=>hidden.add(i)); }\n  if(mode==='qtr'){ [3,4,5,6].forEach(i=>hidden.add(i)); }\n  if(mode==='future'){ [12,13,14,15,16,17,18].forEach(i=>hidden.add(i)); }\n  if(mode==='fyqtr'){ [0,1,2,3,4,5,6].forEach(i=>hidden.add(i)); }\n  document.querySelectorAll('#sopTable [data-sop-col]').forEach(el=>{\n    const i=Number(el.getAttribute('data-sop-col'));\n    el.classList.toggle('col-hidden',hidden.has(i));\n  });\n  document.querySelectorAll('.sop-controls button').forEach(b=>b.classList.remove('active'));\n  const id={all:'sopShowAll',fy:'sopFY',qtr:'sopQtr',future:'sopFuture',fyqtr:'sopFYQtr'}[mode];\n  if(id) document.getElementById(id).classList.add('active');\n}\n\nfunction toggleSopGroup(group){\n  const map={fy:[0,1,2],qtr:[3,4,5,6],future:[12,13,14,15,16,17,18]};\n  const cols=map[group]||[];\n  const first=document.querySelector(`#sopTable [data-sop-col="${cols[0]}"]`);\n  const shouldHide=first ? !first.classList.contains('col-hidden') : true;\n  cols.forEach(i=>document.querySelectorAll(`#sopTable [data-sop-col="${i}"]`).forEach(el=>el.classList.toggle('col-hidden',shouldHide)));\n  document.getElementById('sopShowAll').classList.remove('active');\n}\n
 
 async function ensureChartJs(){
   if(window.Chart) return;
