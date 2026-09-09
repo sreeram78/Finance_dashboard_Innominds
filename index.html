@@ -3,801 +3,676 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nymi Inc — Statement of Financial Operations</title>
+<title>Nymi Inc — AI Enabled CFO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
-<script>
-if (typeof Chart === 'undefined') {
-  document.write('<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"><\/script>');
-}
-</script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <style>
-  :root{
-    --ink:#0F2A43;
-    --steel:#1B3A5C;
-    --accent:#1F6FEB;
-    --accent-soft:#DCE9FD;
-    --positive:#1E7145;
-    --positive-soft:#E4F1E9;
-    --negative:#AE3A2E;
-    --negative-soft:#F7E7E4;
-    --bg:#F4F5F3;
-    --card:#FFFFFF;
-    --line:#DEE2E2;
-    --muted:#5C6670;
-    --text:#182430;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    background:var(--bg);
-    color:var(--text);
-    font-family:'IBM Plex Sans',Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
-  }
-  .wrap{max-width:1180px;margin:0 auto;padding:0 32px 96px;}
-
-  /* Masthead */
-  .masthead{
-    background:var(--ink);
-    color:#fff;
-    padding:52px 0 40px;
-    margin-bottom:44px;
-  }
-  .masthead .wrap{padding-top:0;padding-bottom:0;}
-  .brand-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    border-bottom:1px solid rgba(255,255,255,0.18);
-    padding-bottom:22px;
-    margin-bottom:26px;
-  }
-  .brand{font-family:'IBM Plex Sans';font-weight:600;letter-spacing:0.02em;font-size:15px;color:#BFD3EE;}
-  .asof{font-size:13px;color:#8FA6C2;font-family:'IBM Plex Mono',monospace;}
-  .masthead h1{
-    font-family:'Fraunces',Georgia,serif;
-    font-weight:500;
-    font-size:40px;
-    line-height:1.15;
-    margin:0 0 12px;
-    max-width:760px;
-  }
-  .masthead .sub{
-    font-size:16px;
-    color:#B9CBE2;
-    max-width:640px;
-    line-height:1.55;
-  }
-
-  /* Section headers */
-  .section{margin-bottom:56px;}
-  .section-head{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    border-bottom:2px solid var(--ink);
-    padding-bottom:10px;
-    margin-bottom:22px;
-  }
-  .section-head h2{
-    font-family:'Fraunces',Georgia,serif;
-    font-weight:500;
-    font-size:23px;
-    margin:0;
-    color:var(--ink);
-  }
-  .section-head .tag{
-    font-size:12.5px;
-    color:var(--muted);
-    font-family:'IBM Plex Mono',monospace;
-  }
-  .insight{
-    font-size:15px;
-    line-height:1.65;
-    color:var(--steel);
-    max-width:920px;
-    margin:0 0 26px;
-    padding-left:16px;
-    border-left:3px solid var(--accent);
-  }
-  .insight b{color:var(--ink);}
-
-  /* KPI cards */
-  .kpi-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:1px;
-    background:var(--line);
-    border:1px solid var(--line);
-  }
-  .kpi{
-    background:var(--card);
-    padding:24px 22px;
-  }
-  .kpi .label{
-    font-size:12.5px;
-    color:var(--muted);
-    margin-bottom:14px;
-    font-weight:500;
-  }
-  .kpi .value{
-    font-family:'Fraunces',Georgia,serif;
-    font-size:30px;
-    color:var(--ink);
-    line-height:1;
-    margin-bottom:10px;
-  }
-  .kpi .delta{
-    font-size:12.5px;
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    padding:3px 8px;
-    border-radius:3px;
-    font-weight:600;
-  }
-  .kpi .delta.pos{color:var(--positive);background:var(--positive-soft);}
-  .kpi .delta.neg{color:var(--negative);background:var(--negative-soft);}
-  .kpi .foot{font-size:12px;color:var(--muted);margin-top:10px;}
-
-  /* Chart cards */
-  .card{
-    background:var(--card);
-    border:1px solid var(--line);
-    padding:26px 28px 18px;
-  }
-  .card h3{
-    font-size:14.5px;
-    font-weight:600;
-    margin:0 0 3px;
-    color:var(--ink);
-  }
-  .card .caption{
-    font-size:12.5px;
-    color:var(--muted);
-    margin-bottom:16px;
-  }
-  .chart-box{position:relative;}
-  .two-col{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;}
-
-  /* Table */
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  thead th{
-    text-align:right;
-    font-weight:600;
-    font-size:12px;
-    color:var(--muted);
-    padding:10px 12px;
-    border-bottom:2px solid var(--ink);
-    white-space:nowrap;
-  }
-  thead th:first-child, tbody td:first-child{text-align:left;}
-  tbody td{
-    text-align:right;
-    padding:9px 12px;
-    border-bottom:1px solid var(--line);
-    font-variant-numeric:tabular-nums;
-    white-space:nowrap;
-  }
-  tbody tr.total td{font-weight:700;border-top:1.5px solid var(--ink);border-bottom:none;color:var(--ink);}
-  tbody tr.sub td:first-child{color:var(--muted);padding-left:24px;}
-  td.neg{color:var(--negative);}
-  td.pos-note{color:var(--positive);}
-
-  .legend-row{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:4px;}
-  .legend-item{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);}
-  .swatch{width:11px;height:11px;border-radius:2px;display:inline-block;}
-
-
-  /* Summary SOP */
-  .summary-sop-table{min-width:1120px;}
-  .summary-sop-table thead th{background:#F4F5F3;position:sticky;top:0;z-index:1;}
-  .summary-sop-table tbody td{padding:8px 10px;}
-  .summary-sop-table tbody tr.section-row td{font-weight:700;color:var(--ink);background:#F7F8F7;border-top:1px solid var(--line);}
-  .summary-sop-table tbody tr.metric-row td:first-child{font-weight:600;color:var(--steel);}
-  .summary-sop-table tbody tr.key-row td{font-weight:700;color:var(--ink);border-top:1.5px solid var(--ink);}
-  .summary-sop-table tbody tr.percent-row td{font-family:'IBM Plex Mono',monospace;font-size:12px;}
-  .summary-kpis{margin-bottom:20px;}
-  .summary-kpis .kpi .value{font-size:27px;}
-  .summary-note{font-size:12px;color:var(--muted);margin:14px 0 0;}
-
-  footer{
-    border-top:1px solid var(--line);
-    padding-top:24px;
-    margin-top:12px;
-    font-size:12px;
-    color:var(--muted);
-    line-height:1.7;
-  }
-
-  @media (max-width:900px){
-    .kpi-grid{grid-template-columns:repeat(2,1fr);}
-    .two-col{grid-template-columns:1fr;}
-    .masthead h1{font-size:30px;}
-    table{font-size:12px;}
-  }
+:root{
+  --navy:#092B52; --navy2:#123E70; --blue:#1F6FEB; --orange:#E58A2B;
+  --green:#1E7145; --red:#AE3A2E; --ink:#162536; --muted:#657383;
+  --bg:#F2F5F8; --card:#fff; --line:#D8E0E8; --soft:#EEF3F8;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",Arial,sans-serif}
+.header{background:var(--navy);color:#fff;padding:18px 26px 22px;border-bottom:5px solid var(--orange);position:sticky;top:0;z-index:20}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1450px;margin:auto}
+.brand{font-weight:700;letter-spacing:.04em;font-size:14px}
+.asof{font-size:12px;opacity:.8}
+h1{max-width:1450px;margin:14px auto 0;font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:500}
+.subtitle{max-width:1450px;margin:5px auto 0;color:#C8D8EA;font-size:13px}
+.nav{max-width:1450px;margin:15px auto 0;display:flex;gap:6px;overflow:auto;padding-bottom:2px}
+.nav a{white-space:nowrap;text-decoration:none;color:#D9E5F2;border:1px solid rgba(255,255,255,.18);padding:7px 11px;border-radius:4px;font-size:11px}
+.nav a:hover{background:rgba(255,255,255,.12)}
+.wrap{max-width:1450px;margin:auto;padding:24px 24px 70px}
+.section{margin:0 0 28px}
+.section-title{background:var(--navy);color:#fff;padding:8px 13px;border-radius:5px 5px 0 0;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.section-title span{font-size:10px;font-weight:500;opacity:.75}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:0 0 5px 5px;padding:15px}
+.card.round{border-radius:5px}
+.kpi{background:#fff;border:1px solid var(--line);padding:14px;border-radius:5px;position:relative;overflow:hidden}
+.kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--blue)}
+.kpi.orange:before{background:var(--orange)} .kpi.green:before{background:var(--green)} .kpi.red:before{background:var(--red)}
+.kpi-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi-value{font-family:Fraunces,Georgia,serif;font-size:26px;color:var(--navy);margin:5px 0}
+.kpi-foot{font-size:10px;color:var(--muted)}
+.insight{background:#F8FAFC;border-left:4px solid var(--orange);padding:11px 13px;font-size:12px;line-height:1.55;margin-bottom:12px}
+.insight b{color:var(--navy)}
+.chart{height:265px;position:relative}
+.chart.tall{height:330px}
+.revenue-mix-card{min-height:410px}
+.revenue-mix-chart{height:355px}
+.revenue-mix-chart{display:flex;align-items:center;justify-content:center}
+.revenue-mix-chart canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.donut-center{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  pointer-events:none;
+  z-index:2;
+  width:170px;
+}
+.donut-total{
+  font-family:Fraunces,Georgia,serif;
+  font-weight:600;
+  font-size:30px;
+  line-height:1.05;
+  color:var(--navy);
+}
+.donut-label{
+  margin-top:8px;
+  font-size:15px;
+  line-height:1.2;
+  color:var(--muted);
+  font-weight:500;
+}
+.card-title{font-weight:700;color:var(--navy);font-size:12px;margin-bottom:2px}
+.card-sub{font-size:10px;color:var(--muted);margin-bottom:10px}
+.legend{font-size:10px;color:var(--muted);margin-bottom:5px}
+table{width:100%;border-collapse:collapse;font-size:10px}
+th{background:var(--soft);color:var(--navy);font-weight:700;padding:7px 6px;text-align:right;border-bottom:2px solid var(--navy)}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px;border-bottom:1px solid var(--line);text-align:right}
+tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)}
+.neg{color:var(--red)!important}.pos{color:var(--green)!important}
+.bullet{display:flex;gap:8px;margin:8px 0;font-size:11px;line-height:1.45}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--orange);margin-top:5px;flex:none}
+.placeholder{min-height:230px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);background:#F8FAFC;border:1px dashed #B8C5D2;border-radius:5px;font-size:12px;padding:30px}
+.placeholder strong{display:block;color:var(--navy);font-size:14px;margin-bottom:5px}
+.badge{font-size:9px;border-radius:3px;padding:3px 6px;background:#FFF0DE;color:#9B5B0B;font-weight:700}
+.footer{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:10px;line-height:1.6}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.wrap{padding:14px 10px 50px}.g2,.g3,.g4{grid-template-columns:1fr}.header{padding:14px 12px 16px}h1{font-size:23px}.nav a{font-size:10px}}
 </style>
 </head>
 <body>
 
-<div class="masthead">
-  <div class="wrap">
-    <div class="brand-row">
-      <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
-      <div class="asof" id="asOfLabel">LOADING…</div>
-    </div>
-    <h1>Statement of Financial Operations</h1>
-    <div class="sub">FY2026–27 year-to-date performance, April through August, against the prior fiscal year and the current run-rate trajectory.</div>
+<header class="header">
+  <div class="header-top">
+    <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
+    <div class="asof" id="asof">LOADING DATA…</div>
   </div>
-</div>
+  <h1>AI Enabled CFO Dashboard</h1>
+  <div class="subtitle">Executive performance, variance, profitability and financial statement analysis · FY2026–27</div>
+  <nav class="nav">
+    <a href="#summary">Executive Summary</a>
+    <a href="#performance">YTD Performance</a>
+    <a href="#sop">Summary SOP</a>
+    <a href="#variance">Variance & Drivers</a>
+    <a href="#pl">Income Statement</a>
+    <a href="#bs">Balance Sheet</a>
+    <a href="#roe">Return on Equity</a>
+    <a href="#cf">Cash Flow</a>
+    <a href="#liquidity">Liquidity</a>
+  </nav>
+</header>
 
-<div class="wrap">
+<main class="wrap">
 
-  <!-- EXEC SUMMARY -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Executive summary</h2>
-      <span class="tag">YTD APR–AUG 2026</span>
-    </div>
-    <p class="insight" id="execSummaryText">
-      Loading commentary…
-    </p>
-    <p class="caption" style="margin:-14px 0 22px;">
-      Note: this paragraph is written commentary, not auto-generated — update it by hand (or ask Claude) each time <code>data/financials.json</code> is refreshed. The KPI cards and every chart below recompute automatically from that file.
-    </p>
-
-    <div class="kpi-grid" id="kpiGrid">
-      <div class="kpi">
-        <div class="label">Revenue, YTD</div>
-        <div class="value" id="kpiRevenueValue">–</div>
-        <span class="delta" id="kpiRevenueDelta"></span>
-        <div class="foot" id="kpiRevenueFoot"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">Gross margin %, YTD</div>
-        <div class="value" id="kpiGmValue">–</div>
-        <span class="delta" id="kpiGmDelta"></span>
-        <div class="foot" id="kpiGmFoot"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">EBITDA, YTD</div>
-        <div class="value" id="kpiEbitdaValue">–</div>
-        <span class="delta" id="kpiEbitdaDelta"></span>
-        <div class="foot" id="kpiEbitdaFoot"></div>
-      </div>
-      <div class="kpi">
-        <div class="label">Profit before tax, YTD</div>
-        <div class="value" id="kpiPbtValue">–</div>
-        <span class="delta" id="kpiPbtDelta"></span>
-        <div class="foot" id="kpiPbtFoot"></div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- SUMMARY SOP -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Summary SOP</h2>
-      <span class="tag">SUMMARY OF FINANCIALS · FY2026–27</span>
-    </div>
-    <p class="insight" id="summarySopInsight">Summary SOP from the underlying MIS workbook, showing FY 2025–26, FY 2026–27, quarterly and monthly financial performance. Values are loaded dynamically from <code>data/financials.json</code>.</p>
-
-    <div class="kpi-grid summary-kpis" id="summarySopKpis">
-      <div class="kpi"><div class="label">FY 2026–27 Revenue</div><div class="value" id="sopRevenue">–</div><div class="foot">Current YTD / populated period</div></div>
-      <div class="kpi"><div class="label">FY 2026–27 Gross Margin</div><div class="value" id="sopGrossProfit">–</div><div class="foot" id="sopGmPct">–</div></div>
-      <div class="kpi"><div class="label">FY 2026–27 EBITDA</div><div class="value" id="sopEbitda">–</div><div class="foot" id="sopEbitdaPct">–</div></div>
-      <div class="kpi"><div class="label">FY 2026–27 PBT</div><div class="value" id="sopPbt">–</div><div class="foot" id="sopPbtPct">–</div></div>
-    </div>
-
-    <div class="card" style="overflow-x:auto;">
-      <h3>Statement of Financials — Summary SOP</h3>
-      <div class="caption" id="summarySopCaption">Nymi Inc · sourced from Summary SOP</div>
-      <table id="summarySopTable" class="summary-sop-table"></table>
-      <p class="summary-note">Blank cells represent values not populated in the source sheet. Future months showing zero in the source are retained as zero rather than interpreted as forecast unless explicitly identified as such.</p>
-    </div>
-  </div>
-
-  <!-- REVENUE TREND -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Revenue &amp; gross margin trend</h2>
-      <span class="tag">MONTHLY, APR–AUG 2026</span>
-    </div>
-    <p class="insight">Monthly revenue nearly quintupled from April's $312K to August's $1.48M as large perpetual license deals closed late in the period, while gross margin stayed in a healthy 75–83% band throughout — evidence the growth is not coming at the cost of deal quality.</p>
-    <div class="card">
-      <h3>Total revenue vs. gross margin %</h3>
-      <div class="caption">Bars: total revenue ($) · Line: gross margin (%), right axis</div>
-      <div class="chart-box" style="height:340px;">
-        <canvas id="revTrendChart"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- REVENUE MIX -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Revenue composition</h2>
-      <span class="tag">BY LINE OF BUSINESS</span>
-    </div>
-    <p class="insight">Products remain overwhelmingly the primary engine — <b>88% of YTD revenue</b> — with Services and Subscription together contributing just 12%, a mix that concentrates both the August upside and the company's exposure to lumpy, deal-by-deal license timing.</p>
-    <div class="two-col">
-      <div class="card">
-        <h3>Monthly revenue mix</h3>
-        <div class="caption">Stacked by product line, $</div>
-        <div class="chart-box" style="height:300px;">
-          <canvas id="mixChart"></canvas>
+<section class="section" id="summary">
+  <div class="section-title">Executive Summary for CFO <span id="summaryPeriod">YTD</span></div>
+  <div class="card">
+    <div class="insight" id="executiveSummary">Loading executive summary…</div>
+    <div class="grid g4" id="summaryKpis"></div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Revenue trend</div><div class="card-sub">Monthly total revenue</div><div class="chart"><canvas id="summaryRevenue"></canvas></div></div>
+      <div class="card round"><div class="card-title">EBITDA trend</div><div class="card-sub">Monthly EBITDA</div><div class="chart"><canvas id="summaryEbitda"></canvas></div></div>
+      <div class="card round revenue-mix-card"><div class="card-title">Revenue mix — current month</div><div class="card-sub" id="mixPeriod">Latest reported month</div><div class="chart revenue-mix-chart">
+        <canvas id="summaryMix"></canvas>
+        <div class="donut-center" id="donutCenter">
+          <div class="donut-total" id="donutTotal">$0</div>
+          <div class="donut-label">Total revenue</div>
         </div>
-      </div>
-      <div class="card">
-        <h3>YTD revenue share</h3>
-        <div class="caption">Apr–Aug 2026 cumulative</div>
-        <div class="chart-box" style="height:300px;">
-          <canvas id="mixDonut"></canvas>
-        </div>
-      </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="performance">
+  <div class="section-title">YTD Performance Review <span>Revenue · GM · EBITDA · PBT</span></div>
+  <div class="card">
+    <div class="grid g4" id="performanceKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Revenue vs gross margin</div><div class="card-sub">Monthly trend</div><div class="chart tall"><canvas id="revGm"></canvas></div></div>
+      <div class="card round"><div class="card-title">EBITDA vs PBT</div><div class="card-sub">Monthly profitability</div><div class="chart tall"><canvas id="ebitdaPbt"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="sop">
+  <div class="section-title">Summary SOP <span id="sopPeriod">Statement of Financials FY 2026-27</span></div>
+  <div class="card">
+    <div class="grid g4" id="sopKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Revenue by business line</div><div class="card-sub">FY 2026-27 YTD · Products, Services & Subscription</div><div class="chart tall"><canvas id="sopRevenueMix"></canvas></div></div>
+      <div class="card round"><div class="card-title">Profitability summary</div><div class="card-sub">FY 2026-27 YTD</div><div class="chart tall"><canvas id="sopProfitability"></canvas></div></div>
+    </div>
+    <div class="card round" style="margin-top:12px;overflow:auto">
+      <div class="card-title">Summary SOP — source data</div>
+      <div class="card-sub">Directly extracted from the workbook's “Summary SOP” tab. FY / quarter / reported-month columns are retained.</div>
+      <table id="sopTable"></table>
     </div>
   </div>
 
-  <!-- PROFITABILITY -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Profitability trend</h2>
-      <span class="tag">EBITDA vs. PROFIT BEFORE TAX</span>
+</section>
+
+<section class="section" id="variance">
+  <div class="section-title">Variance and Driver Analysis <span>Management interpretation</span></div>
+  <div class="grid g2">
+    <div class="card round">
+      <div class="card-title">CFO insights</div><div class="card-sub">Automatically derived from reported data</div>
+      <div id="driverBullets"></div>
     </div>
-    <p class="insight">EBITDA improved in four of five months and turned decisively positive in August; PBT tells a different story because <b>$225K of depreciation lands every single month</b> regardless of trading performance, so PBT only broke even with EBITDA's August strength and stayed negative every other month.</p>
-    <div class="card">
-      <h3>EBITDA and profit before tax, monthly</h3>
-      <div class="caption">$, grouped by month</div>
-      <div class="chart-box" style="height:320px;">
-        <canvas id="profitChart"></canvas>
-      </div>
+    <div class="card round"><div class="card-title">Revenue contribution by line</div><div class="card-sub">YTD actuals</div><div class="chart tall"><canvas id="revenueContribution"></canvas></div></div>
+  </div>
+</section>
+
+<section class="section" id="pl">
+  <div class="section-title">Income Statement Analysis (MTD, YTD, FY) <span>Detailed P&L</span></div>
+  <div class="card">
+    <div class="grid g2">
+      <div><div class="card-title">Monthly income statement</div><div class="card-sub">Actual monthly values</div><div style="overflow:auto"><table id="plTable"></table></div></div>
+      <div><div class="card-title">Profit bridge</div><div class="card-sub">YTD revenue to PBT</div><div class="chart tall"><canvas id="profitBridge"></canvas></div></div>
     </div>
   </div>
+</section>
 
-  <!-- WATERFALL -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Revenue-to-profit bridge</h2>
-      <span class="tag">YTD APR–AUG 2026, $</span>
+<section class="section" id="bs">
+  <div class="section-title">Detailed Balance Sheet Analysis <span id="bsPeriod">Latest reported months</span></div>
+  <div class="card">
+    <div class="grid g4" id="bsKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Assets composition</div><div class="card-sub">Latest reported month</div><div class="chart tall"><canvas id="bsAssets"></canvas></div></div>
+      <div class="card round"><div class="card-title">Liabilities & equity</div><div class="card-sub">Latest reported month</div><div class="chart tall"><canvas id="bsLiabilities"></canvas></div></div>
     </div>
-    <p class="insight">The bridge from revenue to the bottom line shows two distinct blocks of erosion: a large but ordinary SG&amp;A step (75% of gross margin) that still leaves a positive EBITDA, and then a second, non-operating block — depreciation and finance charges — that is entirely responsible for flipping the result to a loss.</p>
-    <div class="card">
-      <h3>From revenue to profit before tax</h3>
-      <div class="caption">Waterfall, YTD actuals</div>
-      <div class="chart-box" style="height:380px;">
-        <canvas id="waterfallChart"></canvas>
-      </div>
+    <div class="card round" style="margin-top:12px;overflow:auto"><div class="card-title">Balance Sheet movement</div><div class="card-sub">Reported monthly balances</div><table id="bsTable"></table></div>
+  </div>
+</section>
+
+<section class="section" id="roe">
+  <div class="section-title">Return on Equity Analysis <span>ROE · DuPont</span></div>
+  <div class="grid g3">
+    <div class="placeholder"><div><strong>ROE</strong>Requires net income and average equity.</div></div>
+    <div class="placeholder"><div><strong>ROA / Asset Turnover</strong>Requires balance-sheet assets.</div></div>
+    <div class="placeholder"><div><strong>DuPont Analysis</strong>Margin × asset turnover × equity multiplier will be calculated from BS and P&L data.</div></div>
+  </div>
+</section>
+
+<section class="section" id="cf">
+  <div class="section-title">Detailed Cash Flow Analysis <span>FCF · Working Capital · Capex</span></div>
+  <div class="card">
+    <div class="grid g3" id="cfKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Free cash flow bridge</div><div class="card-sub">Latest reported workbook values</div><div class="chart tall"><canvas id="cfBridge"></canvas></div></div>
+      <div class="card round"><div class="card-title">Cash position</div><div class="card-sub">Balance Sheet cash & bank</div><div class="chart tall"><canvas id="cashTrend"></canvas></div></div>
     </div>
   </div>
+</section>
 
-  <!-- SG&A -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Cost structure</h2>
-      <span class="tag">SG&amp;A BREAKDOWN, YTD</span>
-    </div>
-    <p class="insight">People-related costs dominate the cost base: <b>sales commission &amp; bonus and onsite payroll together account for 67% of SG&amp;A</b> ($2.12M of $3.15M), meaning near-term cost flexibility is limited without touching headcount or compensation structure.</p>
-    <div class="card">
-      <h3>SG&amp;A expense by category</h3>
-      <div class="caption">YTD Apr–Aug 2026, $, sorted descending</div>
-      <div class="chart-box" style="height:420px;">
-        <canvas id="sgaChart"></canvas>
-      </div>
-    </div>
+<section class="section" id="liquidity">
+  <div class="section-title">Detailed Liquidity Analysis <span>Coverage · Cash · Working Capital</span></div>
+  <div class="grid g3">
+    <div class="placeholder"><div><strong>Debt Service Coverage</strong>Requires debt service and cash-flow data.</div></div>
+    <div class="placeholder"><div><strong>Current / Quick Ratio</strong>Requires current asset and current liability data.</div></div>
+    <div class="placeholder"><div><strong>Liquidity Position</strong>Cash, debt and free-cash-flow trend will appear here.</div></div>
   </div>
+</section>
 
-  <!-- TABLE -->
-  <div class="section">
-    <div class="section-head">
-      <h2>Monthly P&amp;L detail</h2>
-      <span class="tag">FY2026–27, $</span>
-    </div>
-    <div class="card" style="overflow-x:auto;">
-      <table id="plTable"></table>
-    </div>
-  </div>
-
-  <footer>
-    Source: Nymi Inc. Statement of Financial MIS, August 2026 (Provisional V3), sheets "Summary SOP" and "Detailed SOP".
-    All figures in USD unless noted. September 2026 – March 2027 columns are not yet populated in the underlying workbook and are excluded from YTD totals above.
-    Prepared for internal management reporting; provisional and subject to close adjustments.
-  </footer>
-
+<div class="footer">
+  Source: Nymi Inc. Statement of Financial MIS. This dashboard reads <code>data/financials.json</code> at page load.
+  P&L and Summary SOP sections are populated from the workbook-derived JSON. Balance Sheet and Cash Flow are populated where the workbook provides reported values; ROE and Liquidity remain data-required.
 </div>
+</main>
 
 <script>
-let D = null;
+let D=null, charts=[];
 
-async function loadData() {
-  const res = await fetch('data/financials.json');
-  if (!res.ok) throw new Error('Could not load data/financials.json');
-  D = await res.json();
-}
+const EMBEDDED_DATA = {"months":["Apr-26","May-26","Jun-26","Jul-26","Aug-26"],"revenue":{"product":[227642.91,640641.9099999999,919276.5700000001,500048.99,1396995.5048086925],"service":[58687.91,59337.56,142939.84,57648.09,51883.280999999995],"subscription":[25911.72,25911.72,30618.39,25397.29,27932.69601595844],"total":[312242.54000000004,725891.19,1092834.8,583094.37,1476811.481824651]},"gm_pct":[0.7462117429210638,0.748110285116676,0.7878727300358358,0.8316634202617723,0.8291123366400172],"cogs":[79243.49001250001,182844.52488541667,231820.06264583336,98156.11191041666,252368.86335220834],"gross_margin":[232999.0499875,543046.6651145832,861014.7373541667,484938.25808958337,1224442.6184724425],"sga":[618427.2900801476,636421.3053607168,596582.9319764618,592151.8197851737,703937.0806003427],"ebitda":[-385428.24009264755,-93374.64024613355,264431.8053777049,-107213.56169559038,520505.5378720998],"ebitda_pct":[-1.2343873454675571,-0.12863448617709985,0.24196869039831537,-0.18386999980053037,0.3524522556047556],"pbt":[-618867.7300926476,-326979.65024613356,-32711.37966928895,-337246.8416955904,276886.4028251059],"finance_charges":[8441.44,8400.48,84269.07999999999,30745.03,30745.03],"depreciation":[225000.0,225000.0,225000.0,225000.0,225000.0],"other_income_exp":[-1.95,204.53,-12125.894953006133,-25711.75,-12125.894953006133],"ytd":{"revenue":4190874.381824651,"cogs":844433.0528063751,"gross_margin":3346441.3290182757,"gm_pct":0.7985067134274924,"sga":3147520.4278028426,"ebitda":198920.90121543314,"ebitda_pct":0.0474652502299116,"finance_charges":162601.06,"depreciation":1125000.0,"other_income_exp":-49760.95990601227,"pbt":-1038919.1988785546,"pbt_pct":-0.24790034351404802},"fy_prior_full":{"revenue":10243607.305482505,"gross_margin":8123275.015482505,"gm_pct":0.7930092176742102,"ebitda":1346002.2814566446,"ebitda_pct":0.131399246507258,"pbt":1459746.0506683523},"sga_breakdown_ytd":{"Sales commission & bonus":1183777.5616282504,"Payroll & benefits \u2013 onsite":940823.4958682298,"Payroll & benefits \u2013 offshore":295739.93,"Payroll PSS non-billable":160745.73763541668,"Third-party contractors":147462.52,"Other G&A expenses":125999.9596401107,"Dues & subscriptions":92356.849193604,"Travel & entertainment":57161.03094611791,"Professional fees":38567.17361563929,"Insurance":38523.55,"Marketing, campaigns & events":30832.619999999995,"Rent & utilities":12686.09,"Communication":22843.909275474183},"summary_sop":{"source_sheet":"Summary SOP","title":"Statement of Financials FY 2026-27","entity":"Nymi Inc","headers":["FY  25-26","1Q' 25-26","FY 2026-27","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27","Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26","Oct-26","Nov-26","Dec-26","Jan-27","Feb-27","Mar-27",""],"rows":[{"row":7,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":8,"particulars":"8271764.97","values":[748571.27,3684605.8848086926,1787561.3900000001,1897044.4948086925,0.0,0.0,227642.91,640641.9099999999,919276.5700000001,500048.99,1396995.5048086925,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":9,"particulars":"1931994.5100000002","values":[206370.65000000002,786735.5409,454968.661,331766.8799,0.0,0.0,67463.281,169528.53,217976.85000000003,88694.22899999999,243072.6509,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":10,"particulars":"6339770.459999999","values":[542200.62,2897870.3439086927,1332592.729,1565277.6149086924,0.0,0.0,160179.62900000002,471113.3799999999,701299.72,411354.761,1153922.8539086925,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":11,"particulars":"0.7664350332719861","values":[0.7243139587764301,0.7864804091684157,0.7454808189832294,0.8251138121388887,0.0,0.0,0.7036442690000757,0.7353770845244888,0.7628821868047827,0.8226289208183383,0.8260032691133914,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":12,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":13,"particulars":"1346468.965482505","values":[299524.6949174066,370496.681,260965.31,109531.37099999998,0.0,0.0,58687.91,59337.56,142939.84,57648.09,51883.280999999995,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":14,"particulars":"163346.94","values":[65907.37,46649.581906374995,30248.20654375,16401.375362624996,0.0,0.0,8914.969012500005,10355.244885416665,10977.992645833328,8283.522910416665,8117.852452208332,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":15,"particulars":"1183122.025482505","values":[233617.3249174066,323847.099093625,230717.10345624998,93129.99563737499,0.0,0.0,49772.9409875,48982.31511458333,131961.84735416668,49364.56708958333,43765.428547791664,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":16,"particulars":"0.8786849573309958","values":[0.7799601464641377,0.8740890693528911,0.884091082666313,0.8502586499841676,0.0,0.0,0.8480953059582458,0.8254858324909776,0.9231985103255095,0.8563088055403628,0.8435362549217283,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":17,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":18,"particulars":"625373.37","values":[223762.31,135771.81601595844,82441.83,53329.98601595844,0.0,0.0,25911.72,25911.72,30618.39,25397.29,27932.69601595844,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":19,"particulars":"24990.839999999997","values":[0.0,11047.929999999998,8691.21,2356.72,0.0,0.0,2865.24,2960.75,2865.22,1178.36,1178.36,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":20,"particulars":"600382.53","values":[223762.31,124723.88601595844,73750.62,50973.26601595844,0.0,0.0,23046.480000000003,22950.97,27753.17,24218.93,26754.33601595844,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":21,"particulars":"0.9600385286632849","values":[1.0,0.9186286939057997,0.8945776676718602,0.9558087264584173,0.0,0.0,0.8894230101282355,0.8857370332806931,0.9064215982616982,0.9536029237765131,0.9578143119687844,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":22,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":23,"particulars":"10243607.305482505","values":[1271858.2749174065,4190874.3818246513,2130968.5300000003,2059905.851824651,0.0,0.0,312242.54000000004,725891.19,1092834.8,583094.37,1476811.481824651,0.0,0.0,0.0,0.0,0.0,0.0,0.0,2130968.5300000003]},{"row":24,"particulars":"2120332.29","values":[272278.02,844433.0528063751,493908.07754375006,350524.975262625,0.0,0.0,79243.49001250001,182844.52488541667,231820.06264583336,98156.11191041666,252368.86335220834,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":25,"particulars":"8123275.015482505","values":[999580.2549174065,3346441.329018276,1637060.4524562503,1709380.8765620259,0.0,0.0,232999.0499875,543046.6651145832,861014.7373541667,484938.25808958337,1224442.6184724425,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":26,"particulars":"0.7930092176742102","values":[0.7859211003539828,0.7985067134274924,0.7682236642210057,0.8298344679432157,0.0,0.0,0.7462117429210638,0.748110285116676,0.7878727300358358,0.8316634202617723,0.8291123366400172,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":27,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":28,"particulars":"6777272.73402586","values":[1784639.5622562845,3147520.4278028426,1851431.527417326,1296088.9003855165,0.0,0.0,618427.2900801476,636421.3053607168,596582.9319764618,592151.8197851737,703937.0806003427,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":29,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":30,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":31,"particulars":"1346002.2814566446","values":[-785059.307338878,198920.9012154336,-214371.0749610758,413291.9761765094,0.0,0.0,-385428.24009264755,-93374.64024613355,264431.8053777049,-107213.56169559038,520505.5378720998,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":32,"particulars":"0.131399246507258","values":[-0.6172537638990155,0.04746525022991171,-0.10059795437761615,0.20063634258353025,0.0,0.0,-1.2343873454675571,-0.12863448617709985,0.24196869039831537,-0.18386999980053037,0.3524522556047556,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":33,"particulars":"103307.83","values":[21570.34,162601.06,101110.99999999999,61490.06,0.0,0.0,8441.44,8400.48,84269.07999999999,30745.03,30745.03,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":34,"particulars":"0","values":[0.0,1125000.0,675000.0,450000.0,0.0,0.0,225000.0,225000.0,225000.0,225000.0,225000.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":35,"particulars":"-217051.59921170762","values":[-29749.119999999995,-49760.95990601227,-11923.314953006133,-37837.644953006136,0.0,0.0,-1.95,204.53,-12125.894953006133,-25711.75,-12125.894953006133,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":36,"particulars":"1459746.0506683523","values":[-776880.527338878,-1038919.1988785542,-978558.7600080697,-60360.43887048446,0.0,0.0,-618867.7300926476,-326979.65024613356,-32711.37966928895,-337246.8416955904,276886.4028251059,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":37,"particulars":"0.14250312484031658","values":[-0.6108231889196365,-0.24790034351404788,-0.4592084520403826,-0.029302523130859393,0.0,0.0,-1.9820096585578875,-0.45045270524103426,-0.029932593351976847,-0.5783743747956106,0.18748933512014904,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":38,"particulars":"0","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":39,"particulars":"1459746.0506683523","values":[-776880.527338878,-1038919.1988785542,-978558.7600080697,-60360.43887048446,0.0,0.0,-618867.7300926476,-326979.65024613356,-32711.37966928895,-337246.8416955904,276886.4028251059,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":40,"particulars":"0.14250312484031658","values":[-0.6108231889196365,-0.24790034351404788,-0.4592084520403826,-0.029302523130859393,0.0,0.0,-1.9820096585578875,-0.45045270524103426,-0.029932593351976847,-0.5783743747956106,0.18748933512014904,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]}]},"balance_sheet":{"source_sheet":"Balance sheet","months":["Jul-26","Aug-26"],"ppe":[2331896.0,2347664.0],"trade_receivables":[2144849.0,2335712.0],"inventory":[768980.0,548050.0],"cash":[345670.0,393930.0],"other_assets":[8816338.0,9670783.0],"total_assets":[14407733.0,15296139.0],"shareholders_fund":[-13531067.0,-13531067.0],"debts":[2664405.0,2781915.0],"trade_payables":[2456792.0,2538750.0],"deferred_revenue":[3187640.0,3308681.0],"other_liabilities":[19629963.0,20197860.0],"total_equity_liability":[14407733.0,15296139.0]},"cash_flow":{"change_wc":-112025.0,"change_capex":240768.0,"fcf":373143.40282510594,"source_sheet":"Balance sheet"}};
 
-const INK = '#0F2A43', STEEL='#1B3A5C', ACCENT='#1F6FEB', ACCENT_SOFT='#9CC0FA', POS='#1E7145', NEG='#AE3A2E', MUTED='#5C6670', LINE='#DEE2E2';
+const C={navy:'#092B52',blue:'#1F6FEB',orange:'#E58A2B',green:'#1E7145',red:'#AE3A2E',muted:'#657383',line:'#D8E0E8'};
 
-if (typeof Chart !== 'undefined') {
-  Chart.defaults.font.family = "'IBM Plex Sans', Arial, sans-serif";
-  Chart.defaults.font.size = 12;
-  Chart.defaults.color = MUTED;
-}
+function fmt(v){const a=Math.abs(v);if(a>=1e6)return(v/1e6).toFixed(2)+'M';if(a>=1e3)return(v/1e3).toFixed(0)+'K';return v.toFixed(0)}
+function usd(v){return(v<0?'-$':'$')+fmt(Math.abs(v))}
+function pct(v){return(v*100).toFixed(1)+'%'}
+function lastIdx(a){for(let i=a.length-1;i>=0;i--)if(a[i]!==0)return i;return a.length-1}
 
-function fmtM(v){
-  const abs = Math.abs(v);
-  if(abs >= 1e6) return (v/1e6).toFixed(2)+'M';
-  if(abs >= 1e3) return (v/1e3).toFixed(0)+'K';
-  return v.toFixed(0);
-}
-function fmtUSD(v){ return (v<0?'-$':'$') + fmtM(Math.abs(v)); }
-function fmtPct(v){ return (v*100).toFixed(1)+'%'; }
-function pctPoint(v){ return (v*100).toFixed(1); }
-
-function lastActualIndex(arr){
-  for(let i=arr.length-1;i>=0;i--){ if(arr[i] !== 0) return i; }
-  return arr.length-1;
-}
-
-function renderKPIs(D){
-  const lastIdx = lastActualIndex(D.revenue.total);
-  const lastMonth = D.months[lastIdx];
-
-  document.getElementById('asOfLabel').textContent =
-    `DATA AS OF ${lastMonth.toUpperCase()} · PROVISIONAL`;
-
-  // Revenue
-  document.getElementById('kpiRevenueValue').textContent = fmtUSD(D.ytd.revenue);
-  document.getElementById('kpiRevenueFoot').textContent =
-    `Prior FY full year: ${fmtUSD(D.fy_prior_full.revenue)}`;
-  const bestIdx = D.revenue.total.indexOf(Math.max(...D.revenue.total));
-  document.getElementById('kpiRevenueDelta').innerHTML =
-    `▲ ${D.months[bestIdx]} ${fmtUSD(D.revenue.total[bestIdx])}, best month`;
-  document.getElementById('kpiRevenueDelta').className = 'delta pos';
-
-  // Gross margin %
-  document.getElementById('kpiGmValue').textContent = fmtPct(D.ytd.gm_pct);
-  const gmDeltaPts = (D.ytd.gm_pct - D.fy_prior_full.gm_pct) * 100;
-  const gmUp = gmDeltaPts >= 0;
-  document.getElementById('kpiGmDelta').innerHTML =
-    `${gmUp?'▲':'▼'} ${gmUp?'+':''}${gmDeltaPts.toFixed(1)} pt vs prior FY`;
-  document.getElementById('kpiGmDelta').className = 'delta ' + (gmUp?'pos':'neg');
-  const gmMin = Math.min(...D.gm_pct), gmMax = Math.max(...D.gm_pct);
-  const gmMinIdx = D.gm_pct.indexOf(gmMin), gmMaxIdx = D.gm_pct.indexOf(gmMax);
-  document.getElementById('kpiGmFoot').textContent =
-    `Range: ${fmtPct(gmMin)} (${D.months[gmMinIdx]}) \u2013 ${fmtPct(gmMax)} (${D.months[gmMaxIdx]})`;
-
-  // EBITDA
-  document.getElementById('kpiEbitdaValue').textContent = fmtUSD(D.ytd.ebitda);
-  document.getElementById('kpiEbitdaValue').style.color = D.ytd.ebitda < 0 ? 'var(--negative)' : 'var(--ink)';
-  const ebitdaUp = D.ytd.ebitda >= 0;
-  document.getElementById('kpiEbitdaDelta').innerHTML =
-    ebitdaUp ? '▲ Positive YTD' : '▼ Negative YTD';
-  document.getElementById('kpiEbitdaDelta').className = 'delta ' + (ebitdaUp?'pos':'neg');
-  document.getElementById('kpiEbitdaFoot').textContent =
-    `Margin ${fmtPct(D.ytd.ebitda_pct)}, vs ${fmtPct(D.fy_prior_full.ebitda_pct)} prior FY`;
-
-  // PBT
-  document.getElementById('kpiPbtValue').textContent = fmtUSD(D.ytd.pbt);
-  document.getElementById('kpiPbtValue').style.color = D.ytd.pbt < 0 ? 'var(--negative)' : 'var(--ink)';
-  const pbtUp = D.ytd.pbt >= D.fy_prior_full.pbt;
-  document.getElementById('kpiPbtDelta').innerHTML =
-    `${pbtUp?'▲':'▼'} vs ${fmtUSD(D.fy_prior_full.pbt)} prior FY`;
-  document.getElementById('kpiPbtDelta').className = 'delta ' + (pbtUp?'pos':'neg');
-  document.getElementById('kpiPbtFoot').textContent =
-    `D&A ${fmtUSD(D.ytd.depreciation)} · Finance charges ${fmtUSD(D.ytd.finance_charges)}`;
-}
-
-function buildCharts(D){
-if (typeof Chart === 'undefined') throw new Error('Chart.js failed to load from both CDNs. Check network/content-security settings.');
-// 1. Revenue trend combo
-new Chart(document.getElementById('revTrendChart'), {
-  data: {
-    labels: D.months,
-    datasets: [
-      {
-        type: 'bar',
-        label: 'Total revenue',
-        data: D.revenue.total,
-        backgroundColor: ACCENT,
-        borderRadius: 2,
-        maxBarThickness: 56,
-        order: 2
-      },
-      {
-        type: 'line',
-        label: 'Gross margin %',
-        data: D.gm_pct.map(v=>v*100),
-        borderColor: INK,
-        backgroundColor: INK,
-        yAxisID: 'y1',
-        tension: 0.3,
-        pointRadius: 4,
-        pointBackgroundColor: INK,
-        borderWidth: 2,
-        order: 1
-      }
-    ]
-  },
-  options: {
-    responsive: true, maintainAspectRatio: false,
-    interaction: {mode:'index', intersect:false},
-    plugins: {
-      legend: {position:'top', align:'end', labels:{boxWidth:11, boxHeight:11, usePointStyle:true}},
-      tooltip: {callbacks: {
-        label: (ctx)=> ctx.dataset.label.includes('%') ? ` Gross margin: ${ctx.parsed.y.toFixed(1)}%` : ` Revenue: ${fmtUSD(ctx.parsed.y)}`
-      }}
-    },
-    scales: {
-      x: {grid:{display:false}},
-      y: {ticks:{callback:(v)=>fmtUSD(v)}, grid:{color:LINE}, title:{display:true,text:'Revenue ($)'}},
-      y1: {position:'right', min:0, max:100, grid:{display:false}, ticks:{callback:(v)=>v+'%'}, title:{display:true,text:'Gross margin (%)'}}
-    }
-  }
-});
-
-// 2. Revenue mix stacked bar
-new Chart(document.getElementById('mixChart'), {
-  type: 'bar',
-  data: {
-    labels: D.months,
-    datasets: [
-      {label:'Products', data:D.revenue.product, backgroundColor: INK, stack:'s'},
-      {label:'Services', data:D.revenue.service, backgroundColor: ACCENT, stack:'s'},
-      {label:'Subscription', data:D.revenue.subscription, backgroundColor: ACCENT_SOFT, stack:'s'}
-    ]
-  },
-  options: {
-    responsive:true, maintainAspectRatio:false,
-    plugins:{legend:{position:'top', align:'end', labels:{boxWidth:11,boxHeight:11,usePointStyle:true}},
-      tooltip:{callbacks:{label:(ctx)=>` ${ctx.dataset.label}: ${fmtUSD(ctx.parsed.y)}`}}},
-    scales:{
-      x:{stacked:true, grid:{display:false}},
-      y:{stacked:true, ticks:{callback:(v)=>fmtUSD(v)}, grid:{color:LINE}}
-    }
-  }
-});
-
-// 3. Revenue mix donut (YTD)
-const ytdProduct = D.revenue.product.reduce((a,b)=>a+b,0);
-const ytdService = D.revenue.service.reduce((a,b)=>a+b,0);
-const ytdSub = D.revenue.subscription.reduce((a,b)=>a+b,0);
-new Chart(document.getElementById('mixDonut'), {
-  type:'doughnut',
-  data:{
-    labels:['Products','Services','Subscription'],
-    datasets:[{data:[ytdProduct, ytdService, ytdSub], backgroundColor:[INK, ACCENT, ACCENT_SOFT], borderWidth:2, borderColor:'#fff'}]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    cutout:'62%',
-    plugins:{
-      legend:{position:'bottom', labels:{boxWidth:11,boxHeight:11,usePointStyle:true, padding:16}},
-      tooltip:{callbacks:{label:(ctx)=>{
-        const total = ytdProduct+ytdService+ytdSub;
-        return ` ${ctx.label}: ${fmtUSD(ctx.parsed)} (${(ctx.parsed/total*100).toFixed(0)}%)`;
-      }}}
-    }
-  }
-});
-
-// 4. EBITDA / PBT grouped bar
-new Chart(document.getElementById('profitChart'), {
-  type:'bar',
-  data:{
-    labels:D.months,
-    datasets:[
-      {label:'EBITDA', data:D.ebitda, backgroundColor: D.ebitda.map(v=>v>=0?POS:NEG), borderRadius:2, maxBarThickness:34},
-      {label:'Profit before tax', data:D.pbt, backgroundColor: D.pbt.map(v=>v>=0?'#8FBFA1':'#D9A79E'), borderRadius:2, maxBarThickness:34}
-    ]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{
-      legend:{position:'top', align:'end', labels:{boxWidth:11,boxHeight:11,usePointStyle:true}},
-      tooltip:{callbacks:{label:(ctx)=>` ${ctx.dataset.label}: ${fmtUSD(ctx.parsed.y)}`}}
-    },
-    scales:{
-      x:{grid:{display:false}},
-      y:{ticks:{callback:(v)=>fmtUSD(v)}, grid:{color:LINE}}
-    }
-  }
-});
-
-// 5. Waterfall (YTD bridge)
-const steps = [
-  {label:'Revenue', value: D.ytd.revenue, type:'total'},
-  {label:'COGS', value: -D.ytd.cogs, type:'neg'},
-  {label:'Gross profit', value: D.ytd.gross_margin, type:'total'},
-  {label:'SG&A', value: -D.ytd.sga, type:'neg'},
-  {label:'EBITDA', value: D.ytd.ebitda, type:'total'},
-  {label:'D&A', value: -D.ytd.depreciation, type:'neg'},
-  {label:'Finance charges', value: -D.ytd.finance_charges, type:'neg'},
-  {label:'Other income', value: -D.ytd.other_income_exp, type:'pos'},
-  {label:'Profit before tax', value: D.ytd.pbt, type:'total'}
-];
-let running = 0;
-const wfData = [];
-const wfColors = [];
-const wfLabels = [];
-steps.forEach(s=>{
-  wfLabels.push(s.label);
-  if(s.type==='total'){
-    wfData.push([0, s.value]);
-    wfColors.push(INK);
-    running = s.value;
-  } else {
-    const start = running;
-    const end = running + s.value;
-    wfData.push([Math.min(start,end), Math.max(start,end)]);
-    wfColors.push(s.type==='neg' ? NEG : POS);
-    running = end;
-  }
-});
-new Chart(document.getElementById('waterfallChart'), {
-  type:'bar',
-  data:{
-    labels: wfLabels,
-    datasets:[{data: wfData, backgroundColor: wfColors, borderRadius:2, maxBarThickness:70}]
-  },
-  options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{
-      legend:{display:false},
-      tooltip:{callbacks:{
-        title:(items)=>items[0].label,
-        label:(ctx)=>{
-          const s = steps[ctx.dataIndex];
-          return ` ${fmtUSD(s.value)}`;
-        }
-      }}
-    },
-    scales:{
-      x:{grid:{display:false}, ticks:{autoSkip:false, maxRotation:20, minRotation:0, font:{size:11}}},
-      y:{ticks:{callback:(v)=>fmtUSD(v)}, grid:{color:LINE}}
-    }
-  }
-});
-
-// 6. SG&A horizontal bar
-const sgaEntries = Object.entries(D.sga_breakdown_ytd).sort((a,b)=>b[1]-a[1]);
-new Chart(document.getElementById('sgaChart'), {
-  type:'bar',
-  data:{
-    labels: sgaEntries.map(e=>e[0]),
-    datasets:[{
-      data: sgaEntries.map(e=>e[1]),
-      backgroundColor: sgaEntries.map((_,i)=> i<2 ? INK : ACCENT),
-      borderRadius:2,
-      maxBarThickness:22
-    }]
-  },
-  options:{
-    indexAxis:'y',
-    responsive:true, maintainAspectRatio:false,
-    plugins:{
-      legend:{display:false},
-      tooltip:{callbacks:{label:(ctx)=>` ${fmtUSD(ctx.parsed.x)}`}}
-    },
-    scales:{
-      x:{ticks:{callback:(v)=>fmtUSD(v)}, grid:{color:LINE}},
-      y:{grid:{display:false}}
-    }
-  }
-});
-
-} // end buildCharts
-
-
-function renderSummarySOP(D){
-  const S = D.summary_sop;
-  if(!S || !S.rows || !S.headers) return;
-  document.getElementById('summarySopCaption').textContent = `${S.entity || 'Nymi Inc'} · ${S.title || 'Statement of Financials FY 2026-27'} · Source: ${S.source_sheet || 'Summary SOP'}`;
-
-  const fyIdx = S.headers.findIndex(h => String(h).trim() === 'FY 2026-27');
-  const revenueRow = S.rows.find(r => /Net Sales|Products:|^Revenues:/i.test(r.particulars || '') && false);
-  const productRow = S.rows.find(r => (r.particulars||'').trim() === '(i) Products:');
-  const grossProfitRow = S.rows.find(r => (r.particulars||'').trim() === 'Gross Profit');
-  const totalGrossMarginRow = S.rows.find(r => (r.particulars||'').trim() === 'Gross Margin' && r.row === 25);
-  const ebitdaRow = S.rows.find(r => (r.particulars||'').trim() === 'EBITDA');
-  const pbtRow = S.rows.find(r => (r.particulars||'').trim() === 'Profit Before Tax');
-  const gmPctRow = S.rows.find(r => (r.particulars||'').trim() === 'GM %' && r.row === 26);
-  const ebitdaPctRow = S.rows.find(r => (r.particulars||'').trim() === 'EBITDA %');
-  const pbtPctRow = S.rows.find(r => (r.particulars||'').trim() === 'PBT %');
-
-  const val = r => r && fyIdx >= 0 ? r.values[fyIdx] : null;
-  document.getElementById('sopRevenue').textContent = fmtUSD(val(S.rows.find(r => (r.particulars||'').trim() === 'Net Sales & Revenues:')) || 0);
-  // Total revenue is also available as the sum of the three revenue lines; use the existing dashboard YTD total when the SOP heading is non-numeric.
-  document.getElementById('sopRevenue').textContent = fmtUSD(D.ytd.revenue);
-  document.getElementById('sopGrossProfit').textContent = fmtUSD(val(totalGrossMarginRow) || D.ytd.gross_margin);
-  document.getElementById('sopGmPct').textContent = `GM % ${fmtPct(val(gmPctRow) || D.ytd.gm_pct)}`;
-  document.getElementById('sopEbitda').textContent = fmtUSD(val(ebitdaRow) || D.ytd.ebitda);
-  document.getElementById('sopEbitdaPct').textContent = `EBITDA % ${fmtPct(val(ebitdaPctRow) || D.ytd.ebitda_pct)}`;
-  document.getElementById('sopPbt').textContent = fmtUSD(val(pbtRow) || D.ytd.pbt);
-  document.getElementById('sopPbtPct').textContent = `PBT % ${fmtPct(val(pbtPctRow) || (D.ytd.pbt/D.ytd.revenue))}`;
-
-  let html = '<thead><tr><th>Particulars ($)</th>' + S.headers.filter(h=>String(h).trim()!=='').map(h=>`<th>${h}</th>`).join('') + '</tr></thead><tbody>';
-  const headers = S.headers.filter(h=>String(h).trim()!=='');
-  S.rows.forEach(r=>{
-    const label=(r.particulars||'').trim();
-    if(!label) return;
-    const isSection = /:$/.test(label) && !['GM %','EBITDA %','PBT %','PAT %'].includes(label);
-    const isPct = /%$/.test(label);
-    const isKey = ['Gross Profit','Gross Margin','EBITDA','Profit Before Tax','Profit After Tax'].includes(label);
-    const cls = `${isSection?'section-row ':''}${isPct?'percent-row ':''}${isKey?'key-row':''}`;
-    html += `<tr class="${cls}"><td>${label}</td>`;
-    const values=r.values||[];
-    for(let i=0;i<headers.length;i++){
-      const v=values[i];
-      let disp='–';
-      if(v!==null && v!==undefined && v!==''){
-        const n=Number(v);
-        if(!Number.isNaN(n)) disp=isPct?fmtPct(n):fmtUSD(n); else disp=String(v);
-      }
-      html += `<td class="${typeof v==='number' && v<0?'neg':''}">${disp}</td>`;
-    }
-    html += '</tr>';
-  });
-  html += '</tbody>';
-  document.getElementById('summarySopTable').innerHTML=html;
-}
-
-function renderTable(D){
-  const rows = [
-    {label:'Total revenue', data:D.revenue.total, ytd:D.ytd.revenue, cls:'total'},
-    {label:'COGS', data:D.cogs, ytd:D.ytd.cogs, cls:'sub'},
-    {label:'Gross margin', data:D.gross_margin, ytd:D.ytd.gross_margin, cls:'total'},
-    {label:'Gross margin %', data:D.gm_pct, ytd:D.ytd.gm_pct, cls:'sub', pct:true},
-    {label:'SG&A expenses', data:D.sga, ytd:D.ytd.sga, cls:'sub'},
-    {label:'EBITDA', data:D.ebitda, ytd:D.ytd.ebitda, cls:'total'},
-    {label:'EBITDA %', data:D.ebitda_pct, ytd:D.ytd.ebitda_pct, cls:'sub', pct:true},
-    {label:'Depreciation & amortization', data:D.depreciation, ytd:D.ytd.depreciation, cls:'sub'},
-    {label:'Finance charges', data:D.finance_charges, ytd:D.ytd.finance_charges, cls:'sub'},
-    {label:'Other (income)/expense', data:D.other_income_exp, ytd:D.ytd.other_income_exp, cls:'sub'},
-    {label:'Profit before tax', data:D.pbt, ytd:D.ytd.pbt, cls:'total'},
+async function loadData(){
+  // GitHub Pages-safe: use JSON when available, otherwise use the embedded
+  // workbook-derived snapshot so the dashboard never remains stuck on LOADING.
+  const urls=[
+    new URL('./data/financials.json',document.baseURI).href,
+    new URL('./financials.json',document.baseURI).href
   ];
-  let thead = '<thead><tr><th>Particulars ($)</th>' + D.months.map(m=>`<th>${m}</th>`).join('') + '<th>YTD Total</th></tr></thead>';
-  let tbody = '<tbody>';
+  let lastErr=null;
+  for(const u of urls){
+    try{
+      const r=await fetch(u+'?v='+Date.now(),{cache:'no-store'});
+      if(r.ok){
+        const candidate=await r.json();
+        if(candidate && candidate.revenue && candidate.ytd){
+          D=candidate;
+          document.getElementById('asof').textContent='LIVE JSON DATA';
+          return;
+        }
+      } else {
+        lastErr=new Error('HTTP '+r.status+' for '+u);
+      }
+    }catch(e){ lastErr=e; }
+  }
+
+  // Embedded fallback generated from the latest uploaded MIS workbook.
+  D=EMBEDDED_DATA;
+  document.getElementById('asof').textContent='EMBEDDED MIS SNAPSHOT · PROVISIONAL';
+  console.warn('financials.json could not be loaded; using embedded workbook snapshot.',lastErr);
+}
+
+function commonOptions(){
+ return {responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,font:{size:10}}}},scales:{x:{grid:{display:false}},y:{grid:{color:C.line},ticks:{callback:v=>usd(v)}}}};
+}
+function make(id,type,data,options={}){
+  const el=document.getElementById(id); if(!el)return;
+  const ch=new Chart(el,{type,data,options});charts.push(ch);return ch;
+}
+
+function renderBalanceSheet(){
+  const B=D.balance_sheet||{}; const months=B.months||[]; const n=months.length; if(!n)return;
+  const i=n-1, m=months[i];
+  const get=k=>(B[k]||[])[i]||0;
+  const currentAssets=get('trade_receivables')+get('inventory')+get('cash')+get('other_assets');
+  const currentLiab=get('trade_payables')+get('deferred_revenue')+get('other_liabilities');
+  const wc=currentAssets-currentLiab;
+  const ratio=currentLiab?currentAssets/currentLiab:0;
+  document.getElementById('bsPeriod').textContent=m+' latest reported';
+  const cards=[['Total Assets',usd(get('total_assets')),''],['Cash & Bank',usd(get('cash')),''],['Working Capital',usd(wc),''],['Current Ratio',ratio.toFixed(2)+'x','']];
+  document.getElementById('bsKpis').innerHTML=cards.map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  make('bsAssets','bar',{labels:['PP&E','Receivables','Inventory','Cash','Other assets'],datasets:[{label:m,data:[get('ppe'),get('trade_receivables'),get('inventory'),get('cash'),get('other_assets')],backgroundColor:[C.navy,C.blue,C.orange,C.green,'#9CC0FA']}]},{...commonOptions(),plugins:{legend:{display:false}}});
+  make('bsLiabilities','bar',{labels:["Shareholder's Fund",'Debt','Payables','Deferred revenue','Other liabilities'],datasets:[{label:m,data:[get('shareholders_fund'),get('debts'),get('trade_payables'),get('deferred_revenue'),get('other_liabilities')],backgroundColor:[C.navy,C.orange,C.blue,'#9CC0FA',C.green]}]},{...commonOptions(),plugins:{legend:{display:false}}});
+  const fields=[['Total Assets','total_assets'],['PP&E','ppe'],['Trade Receivables','trade_receivables'],['Inventory','inventory'],['Cash & Bank','cash'],['Other Assets','other_assets'],["Shareholder's Fund",'shareholders_fund'],['Debts','debts'],['Trade Payables','trade_payables'],['Deferred Revenue','deferred_revenue'],['Other Liabilities','other_liabilities'],['Total Eq. & Liability','total_equity_liability']];
+  let t='<thead><tr><th>Particulars</th>'+months.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
+  fields.forEach(([label,key])=>{t+=`<tr class="${key==='total_assets'||key==='total_equity_liability'?'total':''}"><td>${label}</td>`;(B[key]||[]).forEach(v=>t+=`<td class="${v<0?'neg':''}">${usd(v)}</td>`);t+='</tr>'}); t+='</tbody>'; document.getElementById('bsTable').innerHTML=t;
+}
+function renderCashFlow(){
+  const F=D.cash_flow||{}; const B=D.balance_sheet||{}; const months=B.months||[]; const cash=B.cash||[];
+  document.getElementById('cfKpis').innerHTML=[['Free Cash Flow',usd(F.fcf||0),'Latest workbook value','green'],['Change in Working Capital',usd(F.change_wc||0),'Latest workbook value',(F.change_wc||0)<0?'red':'green'],['Change in Capex',usd(F.change_capex||0),'Latest workbook value',(F.change_capex||0)>0?'red':'green']].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  const base=F.fcf||0, wc=F.change_wc||0, cap=F.change_capex||0;
+  make('cfBridge','bar',{labels:['Change in WC','Change in Capex','Free Cash Flow'],datasets:[{label:'USD',data:[wc,cap,base],backgroundColor:[wc<0?C.red:C.green,cap>0?C.red:C.green,C.navy]}]}, {...commonOptions(),plugins:{legend:{display:false}}});
+  if(months.length) make('cashTrend','line',{labels:months,datasets:[{label:'Cash & Bank',data:cash,borderColor:C.green,backgroundColor:C.green,tension:.25}]},commonOptions());
+}
+
+function renderSummarySOP(){
+  const S=D.summary_sop; if(!S||!S.rows||!S.rows.length)return;
+  const rows=S.rows, h=S.headers||[];
+  const find=(name)=>rows.find(r=>r.particulars.toLowerCase()===name.toLowerCase());
+  const row=(name)=>find(name)?.values||[];
+  const rev=row('Overall:') ;
+  const revenue=find('Revenues')?.values||[];
+  const gm=find('Gross Margin')?.values||[];
+  const ebitda=row('EBITDA'); const pbt=row('Profit Before Tax');
+  const prod=rows.find(r=>r.particulars==='(i) Products:')?.values||[];
+  const serv=rows.find(r=>r.particulars==='(ii) Services:')?.values||[];
+  const sub=rows.find(r=>r.particulars==='(iii) Subscription:')?.values||[];
+  // FY 2026-27 is column index 2 in the source table; Q1/Q2 are indices 3/4.
+  const fyRev=revenue[2]||0, fyGm=gm[2]||0, fyEb=ebitda[2]||0, fyPbt=pbt[2]||0;
+  const fyGmPct=fyRev?fyGm/fyRev:0, fyEbPct=fyRev?fyEb/fyRev:0, fyPbtPct=fyRev?fyPbt/fyRev:0;
+  const prodFy=prod[2]||0, servFy=serv[2]||0, subFy=sub[2]||0;
+  document.getElementById('sopKpis').innerHTML=[
+    ['FY 2026-27 Revenue',usd(fyRev),'Source: Summary SOP',''],
+    ['Gross Margin',usd(fyGm),pct(fyGmPct)+' margin','green'],
+    ['EBITDA',usd(fyEb),pct(fyEbPct)+' margin',fyEb>=0?'green':'red'],
+    ['Profit Before Tax',usd(fyPbt),pct(fyPbtPct)+' margin',fyPbt>=0?'green':'red']
+  ].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  make('sopRevenueMix','doughnut',{labels:['Products','Services','Subscription'],datasets:[{data:[prodFy,servFy,subFy],backgroundColor:[C.navy,C.orange,'#9CC0FA'],borderWidth:3,borderColor:'#fff'}]}, {responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${usd(c.parsed)} (${fyRev?(c.parsed/fyRev*100).toFixed(1):0}%)`}}}});
+  make('sopProfitability','bar',{labels:['Revenue','Gross Margin','EBITDA','PBT'],datasets:[{label:'FY 2026-27',data:[fyRev,fyGm,fyEb,fyPbt],backgroundColor:[C.blue,C.green,fyEb>=0?C.green:C.red,fyPbt>=0?C.green:C.red]}]}, {...commonOptions(),plugins:{legend:{display:false}}});
+  let t='<thead><tr><th>Particulars</th>'+h.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
   rows.forEach(r=>{
-    tbody += `<tr class="${r.cls}"><td>${r.label}</td>`;
-    r.data.forEach(v=>{
-      const disp = r.pct ? fmtPct(v) : fmtUSD(v);
-      tbody += `<td class="${v<0?'neg':''}">${disp}</td>`;
-    });
-    const ytdDisp = r.pct ? fmtPct(r.ytd) : fmtUSD(r.ytd);
-    tbody += `<td class="${r.ytd<0?'neg':''}">${ytdDisp}</td></tr>`;
+    const n=r.particulars.toLowerCase();
+    const isPct=n.endsWith('%'); const isTotal=['gross profit','gross margin','overall:','ebitda','profit before tax','profit after tax'].includes(n);
+    t+=`<tr class="${isTotal?'total':''}"><td>${r.particulars}</td>`;
+    r.values.forEach(v=>t+=`<td class="${v!==null&&v<0?'neg':''}">${v===null?'—':(isPct?pct(v):usd(v))}</td>`);
+    t+='</tr>';
   });
-  tbody += '</tbody>';
-  document.getElementById('plTable').innerHTML = thead + tbody;
-} // end renderTable
+  t+='</tbody>'; document.getElementById('sopTable').innerHTML=t;
+}
+
+function render(){
+  const i=lastIdx(D.revenue.total), m=D.months[i];
+  document.getElementById('asof').textContent='DATA AS OF '+m.toUpperCase()+' · PROVISIONAL';
+  document.getElementById('summaryPeriod').textContent='YTD APR–'+m.toUpperCase();
+
+  const rev=D.ytd.revenue, gm=D.ytd.gm_pct, eb=D.ytd.ebitda, pbt=D.ytd.pbt;
+  const prev=i>0?D.revenue.total[i-1]:0, mom=prev?((D.revenue.total[i]-prev)/Math.abs(prev)*100):0;
+  document.getElementById('executiveSummary').innerHTML=
+    `<b>Revenue:</b> YTD revenue is ${usd(rev)}, with ${m} at ${usd(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM). `+
+    `<b>Margin:</b> YTD gross margin is ${pct(gm)}, with monthly GM ranging from ${pct(Math.min(...D.gm_pct))} to ${pct(Math.max(...D.gm_pct))}. `+
+    `<b>Profitability:</b> EBITDA is ${usd(eb)} (${pct(D.ytd.ebitda_pct)} margin), while PBT is ${usd(pbt)}. `+
+    `<b>Below EBITDA:</b> depreciation of ${usd(D.ytd.depreciation)} and finance charges of ${usd(D.ytd.finance_charges)} materially reduce PBT.`;
+
+  const kpis=[
+    ['Revenue YTD',usd(rev),'Prior FY '+usd(D.fy_prior_full.revenue),''],
+    ['Gross Margin',pct(gm),'Prior FY '+pct(D.fy_prior_full.gm_pct),'green'],
+    ['EBITDA YTD',usd(eb),pct(D.ytd.ebitda_pct)+' margin',eb>=0?'green':'red'],
+    ['PBT YTD',usd(pbt),'PBT margin '+pct(D.ytd.pbt/rev),pbt>=0?'green':'red']
+  ];
+  document.getElementById('summaryKpis').innerHTML=kpis.map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value ${x[1].startsWith('-')?'neg':''}">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  document.getElementById('performanceKpis').innerHTML=kpis.map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value ${x[1].startsWith('-')?'neg':''}">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+
+  document.getElementById('mixPeriod').textContent=m+' · latest reported month';
+  const mp=D.revenue.product[i], ms=D.revenue.subscription[i], mv=D.revenue.service[i];
+  const mixTotal = mp + ms + mv;
+  document.getElementById('donutTotal').textContent = usd(mixTotal);
+
+  make('summaryMix','doughnut',{
+    labels:['Product','Subscription','Services'],
+    datasets:[{
+      data:[mp,ms,mv],
+      backgroundColor:[C.navy,'#9CC0FA','#C99A3A'],
+      borderWidth:4,
+      borderColor:'#fff',
+      hoverOffset:5
+    }]
+  },{
+    responsive:true,
+    maintainAspectRatio:false,
+    cutout:'60%',
+    rotation:-90,
+    plugins:{
+      legend:{
+        position:'bottom',
+        labels:{
+          boxWidth:34,
+          boxHeight:12,
+          padding:14,
+          font:{size:11},
+          generateLabels(chart){
+            const ds=chart.data.datasets[0];
+            const total=ds.data.reduce((a,b)=>a+b,0);
+            return chart.data.labels.map((label,i)=>({
+              text:`${label} (${total ? Math.round(ds.data[i]/total*100) : 0}%)`,
+              fillStyle:ds.backgroundColor[i],
+              strokeStyle:ds.backgroundColor[i],
+              lineWidth:0,
+              hidden:false,
+              index:i
+            }));
+          }
+        }
+      },
+      tooltip:{
+        callbacks:{
+          label:c=>` ${c.label}: ${usd(c.parsed)} (${mixTotal ? (c.parsed/mixTotal*100).toFixed(0) : 0}%)`
+        }
+      }
+    }
+  });
+
+  make('summaryRevenue','line',{labels:D.months,datasets:[{label:'Revenue',data:D.revenue.total,borderColor:C.blue,backgroundColor:C.blue,tension:.3,fill:false}]},{...commonOptions()});
+  make('summaryEbitda','bar',{labels:D.months,datasets:[{label:'EBITDA',data:D.ebitda,backgroundColor:D.ebitda.map(v=>v>=0?C.green:C.red)}]},commonOptions());
+  make('revGm','bar',{labels:D.months,datasets:[{label:'Revenue',data:D.revenue.total,backgroundColor:C.blue},{label:'Gross margin %',data:D.gm_pct.map(v=>v*100),type:'line',yAxisID:'gm',borderColor:C.orange,backgroundColor:C.orange,tension:.3}]},{...commonOptions(),scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}},gm:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%'},grid:{display:false}}}});
+  make('ebitdaPbt','bar',{labels:D.months,datasets:[{label:'EBITDA',data:D.ebitda,backgroundColor:C.green},{label:'PBT',data:D.pbt,backgroundColor:C.orange}]},commonOptions());
+
+  const ytd=[D.revenue.product.reduce((a,b)=>a+b,0),D.revenue.service.reduce((a,b)=>a+b,0),D.revenue.subscription.reduce((a,b)=>a+b,0)];
+  make('revenueContribution','bar',{labels:['Product','Services','Subscription'],datasets:[{label:'YTD revenue',data:ytd,backgroundColor:[C.navy,C.orange,'#9CC0FA']}]},{...commonOptions(),plugins:{legend:{display:false}}});
+
+  const bullets=[
+    `Revenue accelerated sharply, with ${m} the strongest reported month at <b>${usd(D.revenue.total[i])}</b>.`,
+    `Gross margin remains within a <b>${pct(Math.min(...D.gm_pct))}–${pct(Math.max(...D.gm_pct))}</b> monthly range.`,
+    `EBITDA is <b>${eb>=0?'positive':'negative'}</b> at ${usd(eb)}, representing a ${pct(D.ytd.ebitda_pct)} YTD margin.`,
+    `PBT is ${usd(pbt)} after ${usd(D.ytd.depreciation)} of depreciation and ${usd(D.ytd.finance_charges)} of finance charges.`,
+    `Product revenue represents <b>${(ytd[0]/rev*100).toFixed(0)}%</b> of YTD revenue, indicating material product concentration.`
+  ];
+  document.getElementById('driverBullets').innerHTML=bullets.map(b=>`<div class="bullet"><span class="dot"></span><div>${b}</div></div>`).join('');
+
+  const rows=[
+    ['Total revenue',D.revenue.total,D.ytd.revenue,'total'],
+    ['COGS',D.cogs,D.ytd.cogs,''],
+    ['Gross margin',D.gross_margin,D.ytd.gross_margin,'total'],
+    ['Gross margin %',D.gm_pct,D.ytd.gm_pct,'pct'],
+    ['SG&A expenses',D.sga,D.ytd.sga,''],
+    ['EBITDA',D.ebitda,D.ytd.ebitda,'total'],
+    ['EBITDA %',D.ebitda_pct,D.ytd.ebitda_pct,'pct'],
+    ['Depreciation & amortization',D.depreciation,D.ytd.depreciation,''],
+    ['Finance charges',D.finance_charges,D.ytd.finance_charges,''],
+    ['Other income / expense',D.other_income_exp,D.ytd.other_income_exp,''],
+    ['Profit before tax',D.pbt,D.ytd.pbt,'total']
+  ];
+  let t='<thead><tr><th>Particulars</th>'+D.months.map(x=>`<th>${x}</th>`).join('')+'<th>YTD</th></tr></thead><tbody>';
+  rows.forEach(r=>{t+=`<tr class="${r[3]=='total'?'total':''}"><td>${r[0]}</td>`;r[1].forEach(v=>t+=`<td class="${v<0?'neg':''}">${r[3]=='pct'?pct(v):usd(v)}</td>`);t+=`<td class="${r[2]<0?'neg':''}">${r[3]=='pct'?pct(r[2]):usd(r[2])}</td></tr>`});
+  t+='</tbody>';document.getElementById('plTable').innerHTML=t;
+
+  const bridge=[['Revenue',rev],['COGS',-D.ytd.cogs],['Gross margin',D.ytd.gross_margin],['SG&A',-D.ytd.sga],['EBITDA',eb],['D&A',-D.ytd.depreciation],['Finance',-D.ytd.finance_charges],['Other',-D.ytd.other_income_exp],['PBT',pbt]];
+  let run=0, bd=[], colors=[];
+  bridge.forEach(([l,v])=>{if(['Revenue','Gross margin','EBITDA','PBT'].includes(l)){bd.push([0,v]);run=v;colors.push(C.navy)}else{const e=run+v;bd.push([Math.min(run,e),Math.max(run,e)]);run=e;colors.push(v<0?C.red:C.green)}});
+  make('profitBridge','bar',{labels:bridge.map(x=>x[0]),datasets:[{data:bd,backgroundColor:colors}]},{...commonOptions(),plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}}}});
+}
+
+
+async function ensureChartJs(){
+  if(window.Chart) return;
+  await new Promise((resolve,reject)=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js';
+    s.onload=resolve;
+    s.onerror=()=>reject(new Error('Chart.js could not be loaded from either CDN.'));
+    document.head.appendChild(s);
+  });
+  if(!window.Chart) throw new Error('Chart.js is unavailable.');
+}
 
 async function main(){
-  try {
-    await loadData();
-    renderKPIs(D);
-    // Summary SOP is optional so a legacy financials.json cannot prevent charts from rendering.
-    if (D.summary_sop && Array.isArray(D.summary_sop.rows)) {
-      renderSummarySOP(D);
-    } else {
-      const el = document.getElementById('summarySopTable');
-      if (el) el.innerHTML = '<tbody><tr><td style="padding:18px;color:#5C6670;">Summary SOP data is not present in data/financials.json. Run the updated extraction script to populate it.</td></tr></tbody>';
-    }
-    if (typeof Chart === 'undefined') throw new Error('Chart.js could not be loaded. Check the Chart.js CDN/network connection.');
-    buildCharts(D);
-    renderTable(D);
-  } catch (err) {
-    document.getElementById('asOfLabel').textContent = 'DATA LOAD ERROR';
-    document.getElementById('execSummaryText').textContent =
-      'Could not load data/financials.json — ' + err.message +
-      '. If you opened this file directly (file://), serve the folder over ' +
-      'HTTP instead, e.g. run "python -m http.server" in the project root.';
-    console.error(err);
-  }
+ try{await ensureChartJs();await loadData();render();renderSummarySOP();renderBalanceSheet();renderCashFlow()}
+ catch(e){
+   document.getElementById('asof').textContent='DATA LOAD ERROR';
+   document.getElementById('executiveSummary').innerHTML='<b>Dashboard data error.</b> '+e.message+' The page includes an embedded MIS snapshot, so this should only occur if Chart.js itself is unavailable.';
+   console.error(e);
+ }
 }
 main();
+
+
+
+
 </script>
 
+<!-- CFO AI CHATBOT -->
+<button id="cfoChatToggle" class="cfo-chat-toggle" aria-label="Open CFO AI Assistant">✦</button>
+
+<div id="cfoChat" class="cfo-chat" aria-hidden="true">
+  <div class="cfo-chat-head">
+    <div>
+      <strong>Ask CFO</strong>
+      <span>Data-aware financial assistant</span>
+    </div>
+    <button id="cfoChatClose" aria-label="Close">×</button>
+  </div>
+
+  <div class="cfo-chat-status">
+    <span class="cfo-status-dot"></span>
+    Connected to dashboard data
+  </div>
+
+  <div id="cfoChatMessages" class="cfo-chat-messages"></div>
+
+  <div class="cfo-chat-suggestions">
+    <button data-q="What is our YTD revenue?">YTD revenue</button>
+    <button data-q="Why is PBT negative?">Why is PBT negative?</button>
+    <button data-q="What is driving SG&A?">SG&A drivers</button>
+    <button data-q="How is August performing?">August performance</button>
+  </div>
+
+  <form id="cfoChatForm" class="cfo-chat-form">
+    <input id="cfoChatInput" autocomplete="off" placeholder="Ask about revenue, EBITDA, PBT, margin..." />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<style>
+.cfo-chat-toggle{
+  position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:0;border-radius:50%;
+  background:var(--navy);color:#fff;font-size:25px;box-shadow:0 8px 28px rgba(9,43,82,.28);
+  cursor:pointer;z-index:1000
+}
+.cfo-chat-toggle:hover{transform:translateY(-2px)}
+.cfo-chat{
+  position:fixed;right:24px;bottom:94px;width:390px;max-width:calc(100vw - 28px);height:590px;
+  background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 55px rgba(9,43,82,.22);
+  z-index:999;display:none;overflow:hidden
+}
+.cfo-chat.open{display:flex;flex-direction:column}
+.cfo-chat-head{background:var(--navy);color:#fff;padding:15px 16px;display:flex;justify-content:space-between;align-items:center}
+.cfo-chat-head strong{display:block;font-size:14px}.cfo-chat-head span{display:block;color:#c8d8ea;font-size:10px;margin-top:2px}
+.cfo-chat-head button{background:transparent;border:0;color:#fff;font-size:24px;cursor:pointer}
+.cfo-chat-status{font-size:10px;color:var(--muted);padding:8px 13px;border-bottom:1px solid var(--line)}
+.cfo-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
+.cfo-chat-messages{flex:1;overflow:auto;padding:13px;background:#f7f9fb}
+.cfo-msg{max-width:88%;padding:9px 11px;border-radius:8px;margin:7px 0;font-size:11.5px;line-height:1.5;white-space:pre-wrap}
+.cfo-msg.bot{background:#fff;border:1px solid var(--line);color:var(--ink);margin-right:auto}
+.cfo-msg.user{background:var(--navy);color:#fff;margin-left:auto}
+.cfo-chat-suggestions{display:flex;gap:5px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid var(--line)}
+.cfo-chat-suggestions button{border:1px solid #cbd6e1;background:#fff;color:var(--navy);border-radius:14px;padding:5px 8px;font-size:9.5px;cursor:pointer}
+.cfo-chat-form{display:flex;gap:7px;padding:10px;border-top:1px solid var(--line);background:#fff}
+.cfo-chat-form input{flex:1;min-width:0;border:1px solid #cbd6e1;border-radius:5px;padding:9px;font:inherit;font-size:11px;outline:none}
+.cfo-chat-form input:focus{border-color:var(--blue)}
+.cfo-chat-form button{border:0;background:var(--orange);color:#fff;border-radius:5px;padding:0 13px;font-size:11px;font-weight:700;cursor:pointer}
+@media(max-width:500px){
+ .cfo-chat{right:10px;bottom:82px;width:calc(100vw - 20px);height:70vh}
+ .cfo-chat-toggle{right:14px;bottom:14px}
+}
+</style>
+
+
+<script>
+/* ================= CFO DATA ASSISTANT =================
+   This version is intentionally API-key-free and GitHub-Pages safe.
+   It answers using the same financial data already loaded into D.
+   A secure Azure OpenAI endpoint can be connected later without
+   exposing credentials in this HTML.
+*/
+(function(){
+  const toggle=document.getElementById('cfoChatToggle');
+  const panel=document.getElementById('cfoChat');
+  const close=document.getElementById('cfoChatClose');
+  const messages=document.getElementById('cfoChatMessages');
+  const form=document.getElementById('cfoChatForm');
+  const input=document.getElementById('cfoChatInput');
+
+  function addMessage(text,who){
+    const el=document.createElement('div');
+    el.className='cfo-msg '+who;
+    el.textContent=text;
+    messages.appendChild(el);
+    messages.scrollTop=messages.scrollHeight;
+  }
+
+  function money(v){
+    const a=Math.abs(v);
+    const s=a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0);
+    return (v<0?'-$':'$')+s;
+  }
+  function percent(v){return (v*100).toFixed(1)+'%'}
+  function idx(){return lastIdx(D.revenue.total)}
+  function latestMonth(){return D.months[idx()]}
+  function sum(a){return (a||[]).reduce((x,y)=>x+(Number(y)||0),0)}
+  function topSga(){
+    return Object.entries(D.sga_breakdown_ytd||{}).sort((a,b)=>b[1]-a[1]).slice(0,5)
+  }
+
+  function answer(q){
+    if(!D) return 'The financial data has not finished loading yet.';
+
+    const x=q.toLowerCase().trim();
+    const i=idx(), m=latestMonth();
+    const revenue=D.ytd.revenue, ebitda=D.ytd.ebitda, pbt=D.ytd.pbt;
+
+    if(/^(hi|hello|hey)\b/.test(x))
+      return `Hello. I’m your CFO data assistant. I can analyse the financial data currently loaded into the dashboard. Try asking about revenue, margin, EBITDA, PBT, SG&A, revenue mix or a specific month.`;
+
+    if(x.includes('ytd revenue') || x.includes('revenue ytd') || x.includes('total revenue'))
+      return `YTD revenue is ${money(revenue)} through ${m}. ${m} revenue is ${money(D.revenue.total[i])}. The strongest reported month is ${D.months[D.revenue.total.indexOf(Math.max(...D.revenue.total))]} at ${money(Math.max(...D.revenue.total))}.`;
+
+    if(x.includes('revenue mix') || x.includes('product') || x.includes('service') || x.includes('subscription')){
+      const p=sum(D.revenue.product), s=sum(D.revenue.service), sub=sum(D.revenue.subscription);
+      const current=`${m}: Product ${money(D.revenue.product[i])} (${(D.revenue.product[i]/D.revenue.total[i]*100).toFixed(0)}%), Services ${money(D.revenue.service[i])} (${(D.revenue.service[i]/D.revenue.total[i]*100).toFixed(0)}%), Subscription ${money(D.revenue.subscription[i])} (${(D.revenue.subscription[i]/D.revenue.total[i]*100).toFixed(0)}%).`;
+      return `Revenue mix analysis:\n${current}\nYTD mix: Product ${(p/revenue*100).toFixed(0)}%, Services ${(s/revenue*100).toFixed(0)}%, Subscription ${(sub/revenue*100).toFixed(0)}%.`;
+    }
+
+    if(x.includes('gross margin') || x.includes('gm')){
+      const min=Math.min(...D.gm_pct), max=Math.max(...D.gm_pct);
+      return `YTD gross margin is ${percent(D.ytd.gm_pct)}. Monthly gross margin ranges from ${percent(min)} to ${percent(max)}. ${m} gross margin is ${percent(D.gm_pct[i])}.`;
+    }
+
+    if(x.includes('ebitda')){
+      return `YTD EBITDA is ${money(ebitda)}, a ${percent(D.ytd.ebitda_pct)} margin. ${m} EBITDA is ${money(D.ebitda[i])}. `+
+        (ebitda>=0?'EBITDA is positive YTD.':'EBITDA is negative YTD.');
+    }
+
+    if(x.includes('pbt') || x.includes('profit before tax') || x.includes('why') && x.includes('negative')){
+      return `YTD PBT is ${money(pbt)}. EBITDA is ${money(ebitda)}, so the gap below EBITDA is ${money(pbt-ebitda)}. `+
+        `The major reported below-EBITDA charges are depreciation of ${money(D.ytd.depreciation)} and finance charges of ${money(D.ytd.finance_charges)}.`;
+    }
+
+    if(x.includes('sga') || x.includes('sg&a') || x.includes('expense') || x.includes('cost')){
+      const top=topSga();
+      const total=D.ytd.sga;
+      return `YTD SG&A is ${money(total)}.\nTop drivers:\n`+
+        top.map((e,n)=>`${n+1}. ${e[0]} — ${money(e[1])} (${(e[1]/total*100).toFixed(1)}%)`).join('\n');
+    }
+
+    if(x.includes('august') || x.includes('latest month') || x.includes('current month')){
+      const prev=i>0?D.revenue.total[i-1]:0;
+      const mom=prev?((D.revenue.total[i]-prev)/Math.abs(prev)*100):0;
+      return `${m} performance:\nRevenue ${money(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM)\n`+
+        `Gross margin ${percent(D.gm_pct[i])}\nEBITDA ${money(D.ebitda[i])}\nPBT ${money(D.pbt[i])}`;
+    }
+
+    if(x.includes('best month') || x.includes('highest revenue')){
+      const j=D.revenue.total.indexOf(Math.max(...D.revenue.total));
+      return `The strongest reported revenue month is ${D.months[j]} at ${money(D.revenue.total[j])}.`;
+    }
+
+    if(x.includes('risk') || x.includes('concern') || x.includes('problem')){
+      const product=sum(D.revenue.product)/revenue;
+      return `Key management watch-outs from the loaded data:\n`+
+        `• PBT is ${money(pbt)} YTD.\n`+
+        `• Product revenue represents ${(product*100).toFixed(0)}% of YTD revenue.\n`+
+        `• SG&A is ${money(D.ytd.sga)}, equal to ${(D.ytd.sga/revenue*100).toFixed(1)}% of revenue.\n`+
+        `• Depreciation and finance charges total ${money(D.ytd.depreciation+D.ytd.finance_charges)}.`;
+    }
+
+    return `I can answer questions using the dashboard data, but I didn't recognise that question yet.\nTry: "What is YTD revenue?", "Why is PBT negative?", "What is driving SG&A?", "How is August performing?", or "What is our revenue mix?"`;
+  }
+
+  toggle.addEventListener('click',()=>{
+    panel.classList.toggle('open');
+    panel.setAttribute('aria-hidden',panel.classList.contains('open')?'false':'true');
+    if(panel.classList.contains('open') && !messages.children.length)
+      addMessage('I’m connected to the financial data loaded into this dashboard. What would you like to know?','bot');
+    if(panel.classList.contains('open')) input.focus();
+  });
+  close.addEventListener('click',()=>panel.classList.remove('open'));
+
+  document.querySelectorAll('.cfo-chat-suggestions button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const q=b.dataset.q;
+      addMessage(q,'user');
+      setTimeout(()=>addMessage(answer(q),'bot'),150);
+    });
+  });
+
+  form.addEventListener('submit',e=>{
+    e.preventDefault();
+    const q=input.value.trim();
+    if(!q)return;
+    addMessage(q,'user');
+    input.value='';
+    setTimeout(()=>addMessage(answer(q),'bot'),150);
+  });
+})();
+</script>
 </body>
 </html>
