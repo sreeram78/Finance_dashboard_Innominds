@@ -363,33 +363,66 @@ function pct(v){return(v*100).toFixed(1)+'%'}
 function lastIdx(a){for(let i=a.length-1;i>=0;i--)if(a[i]!==0)return i;return a.length-1}
 
 async function loadData(){
-  // GitHub Pages-safe: use JSON when available, otherwise use the embedded
-  // workbook-derived snapshot so the dashboard never remains stuck on LOADING.
-  const urls=[
-    new URL('./data/financials.json',document.baseURI).href,
-    new URL('./financials.json',document.baseURI).href
-  ];
-  let lastErr=null;
-  for(const u of urls){
-    try{
-      const r=await fetch(u+'?v='+Date.now(),{cache:'no-store'});
-      if(r.ok){
-        const candidate=await r.json();
-        if(candidate && candidate.revenue && candidate.ytd){
-          D=candidate;
-          document.getElementById('asof').textContent='LIVE JSON DATA';
-          return;
-        }
-      } else {
-        lastErr=new Error('HTTP '+r.status+' for '+u);
-      }
-    }catch(e){ lastErr=e; }
+  /*
+    GitHub Pages safe data loading.
+
+    IMPORTANT:
+    - EMBEDDED_DATA is the guaranteed fallback and is available immediately.
+    - We never throw an exception because financials.json is missing, blocked,
+      malformed, or has an older schema.
+    - If data/financials.json is available and has the expected structure,
+      it replaces the embedded snapshot.
+  */
+  D = EMBEDDED_DATA;
+  const status = document.getElementById('asof');
+  if(status) status.textContent='EMBEDDED MIS SNAPSHOT · PROVISIONAL';
+
+  const base = document.baseURI || window.location.href;
+  const urls = [];
+  try{
+    urls.push(new URL('./data/financials.json',base).href);
+    urls.push(new URL('./financials.json',base).href);
+  }catch(e){
+    console.warn('Could not construct JSON URLs; using embedded data.',e);
+    return;
   }
 
-  // Embedded fallback generated from the latest uploaded MIS workbook.
-  D=EMBEDDED_DATA;
-  document.getElementById('asof').textContent='EMBEDDED MIS SNAPSHOT · PROVISIONAL';
-  console.warn('financials.json could not be loaded; using embedded workbook snapshot.',lastErr);
+  for(const u of urls){
+    try{
+      const r=await fetch(u+'?v='+Date.now(),{
+        cache:'no-store',
+        headers:{'Accept':'application/json'}
+      });
+      if(!r.ok) continue;
+
+      const candidate=await r.json();
+
+      // Accept the live JSON only when it contains the structures required
+      // by this dashboard. This avoids replacing good embedded data with
+      // an incompatible/older JSON file.
+      const valid =
+        candidate &&
+        typeof candidate === 'object' &&
+        candidate.revenue &&
+        candidate.ytd &&
+        (
+          candidate.summary_sop ||
+          candidate.detailed_sop ||
+          candidate.balance_sheet
+        );
+
+      if(valid){
+        D=candidate;
+        if(status) status.textContent='LIVE JSON DATA';
+        return;
+      }
+    }catch(e){
+      console.warn('JSON unavailable:',u,e);
+    }
+  }
+
+  // Deliberately do not throw. The dashboard can operate from EMBEDDED_DATA.
+  console.warn('financials.json unavailable or incompatible; using embedded MIS snapshot.');
 }
 
 function commonOptions(){
@@ -786,33 +819,31 @@ function renderCharts(){
 async function main(){
   const status=document.getElementById('asof');
   try{
-    // 1) Load financial data. loadData has a GitHub Pages-safe embedded fallback.
     await loadData();
 
-    // 2) Load Chart.js BEFORE calling any render function.
-    // Several dashboard render functions create Chart instances.
+    // Render each section independently.
+    try{ if(typeof render==='function') render(); }catch(e){ console.error('Main dashboard:',e); }
+    try{ if(typeof renderSummarySOP==='function') renderSummarySOP(); }catch(e){ console.error('Summary SOP:',e); }
+    try{ if(typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(e){ console.error('Detailed SOP:',e); }
+    try{ if(typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(e){ console.error('Cost Analysis:',e); }
+    try{ if(typeof renderBalanceSheet==='function') renderBalanceSheet(); }catch(e){ console.error('Balance Sheet:',e); }
+    try{ if(typeof renderCashFlow==='function') renderCashFlow(); }catch(e){ console.error('Cash Flow:',e); }
+
     const chartsReady=await ensureChartJs();
-
-    // 3) Render every section independently so one section can never blank another.
-    try{ render(); }catch(e){ console.error('Main dashboard render:',e); }
-    try{ renderSummarySOP(); }catch(e){ console.error('Summary SOP render:',e); }
-    try{ renderDetailedSOP(); }catch(e){ console.error('Detailed SOP render:',e); }
-    try{ renderCostAnalysis(); }catch(e){ console.error('Cost analysis render:',e); }
-    try{ renderBalanceSheet(); }catch(e){ console.error('Balance Sheet render:',e); }
-    try{ renderCashFlow(); }catch(e){ console.error('Cash Flow render:',e); }
-
-    // Dedicated Detailed SOP chart.
     if(chartsReady){
-      try{ renderDetailedSopChart(); }catch(e){ console.error('Detailed SOP chart:',e); }
-      if(status) status.textContent=(status.textContent||'DATA LOADED')+' · CHARTS READY';
+      try{ if(typeof renderDetailedSopChart==='function') renderDetailedSopChart(); }catch(e){ console.error('Detailed SOP chart:',e); }
+      if(status && !/LIVE JSON DATA/.test(status.textContent)) status.textContent='MIS DATA LOADED · CHARTS READY';
     }else{
-      if(status) status.textContent=(status.textContent||'DATA LOADED')+' · CHARTS UNAVAILABLE';
+      if(status && !/LIVE JSON DATA/.test(status.textContent)) status.textContent='MIS DATA LOADED · CHART LIBRARY UNAVAILABLE';
     }
   }catch(e){
+    // Last-resort recovery: use the embedded data and render whatever is available.
     console.error('Dashboard startup error:',e);
-    if(status) status.textContent='DATA LOAD ERROR';
-    const ex=document.getElementById('executiveSummary');
-    if(ex) ex.innerHTML='<b>Dashboard startup error.</b> '+String(e.message||e);
+    try{ D=EMBEDDED_DATA; }catch(_){}
+    if(status) status.textContent='EMBEDDED MIS DATA';
+    try{ if(typeof render==='function') render(); }catch(_){}
+    try{ if(typeof renderSummarySOP==='function') renderSummarySOP(); }catch(_){}
+    try{ if(typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(_){}
   }
 }
 main();
