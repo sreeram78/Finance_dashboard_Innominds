@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CFO Dashboard</title>
+<title>Nymi Inc — AI Enabled CFO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -157,7 +157,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
     <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
     <div class="asof" id="asof">LOADING DATA…</div>
   </div>
-  <h1>CFO Dashboard</h1>
+  <h1>AI Enabled CFO Dashboard</h1>
   <div class="subtitle">Executive performance, variance, profitability and financial statement analysis · FY2026–27</div>
   <nav class="nav">
     <a href="#summary">Executive Summary</a>
@@ -232,6 +232,23 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 
 </section>
 
+<section class="section" id="costAnalysis">
+  <div class="section-title">Cost Analysis <span>S&amp;GA Expenses</span></div>
+  <div class="card">
+    <div class="grid g4" id="costKpis">
+      <div class="kpi"><div class="kpi-label">S&amp;GA Expenses, YTD</div><div class="kpi-value" id="costTotal">—</div><div class="kpi-foot">Total operating cost</div></div>
+      <div class="kpi"><div class="kpi-label">People-related costs</div><div class="kpi-value" id="costPeople">—</div><div class="kpi-foot">Payroll + sales commission</div></div>
+      <div class="kpi"><div class="kpi-label">People cost % of S&amp;GA</div><div class="kpi-value" id="costPeoplePct">—</div><div class="kpi-foot">Share of total S&amp;GA</div></div>
+      <div class="kpi"><div class="kpi-label">Largest cost driver</div><div class="kpi-value" id="costLargest">—</div><div class="kpi-foot" id="costLargestFoot">YTD</div></div>
+    </div>
+    <div class="insight" id="costAnalysisInsight" style="margin-top:14px">S&amp;GA cost structure and key drivers based on YTD actuals.</div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">S&amp;GA Expenses — YTD</div><div class="card-sub">Cost by category, highest to lowest</div><div class="chart" style="height:430px"><canvas id="costAnalysisChart"></canvas></div></div>
+      <div class="card round"><div class="card-title">S&amp;GA Cost Concentration</div><div class="card-sub">Largest cost drivers as a share of total S&amp;GA</div><div class="chart" style="height:430px"><canvas id="costConcentrationChart"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
 <section class="section" id="detailedSop">
   <div class="section-title">Detailed SOP <span>Statement of Financials FY 2026-27</span></div>
   <div class="card">
@@ -247,7 +264,15 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
         <span class="hint">Use the ⊖ / ⊕ icon directly on selected headers to collapse or expand one column.</span>
       </div>
       <div class="sop-individual-note">Selected headers have a <b>⊖</b> toggle. Click it to collapse the column to a narrow rail; click <b>⊕</b> to expand it again.</div>
-      <div class="sop-wrap"><table id="detailedSopTable" class="sop-excel"></table></div>
+      <div class="sop-wrap"><table 
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-title">Detailed SOP — FY 2026-27 Revenue & Profitability</div>
+  <div class="card-sub">Overall Detailed SOP values from the Excel MIS</div>
+  <div class="chart" style="height:340px;">
+    <canvas id="detailedSopChart"></canvas>
+  </div>
+</div>
+id="detailedSopTable" class="sop-excel"></table></div>
       <div class="sop-note">Source: Detailed SOP tab · FY 2025-26 through FY 2026-27 · Apr-26 through Mar-27. Values are presented as reported in the workbook.</div>
     </div>
   </div>
@@ -431,9 +456,7 @@ function renderSummarySOP(){
   const row = n => rows.find(r => Number(r.row) === n);
   const v = n => row(n)?.values || [];
 
-  // Workbook row map:
-  // 8 Products revenue; 13 Services revenue; 18 Subscription revenue;
-  // 23 Overall revenue; 25 Overall gross margin; 31 EBITDA; 36 PBT.
+  // Workbook row map: products=8, services=13, subscription=18, overall revenue=23, gross margin=25, EBITDA=31, PBT=36.
   const prodFy = Number(v(8)[2] || 0);
   const servFy = Number(v(13)[2] || 0);
   const subFy  = Number(v(18)[2] || 0);
@@ -692,8 +715,77 @@ async function ensureChartJs(){
   if(!window.Chart) throw new Error('Chart.js is unavailable.');
 }
 
+
+function renderDetailedSopChart(){
+  if(!D || !D.detailed_sop || !Array.isArray(D.detailed_sop.rows)) return;
+  const canvas=document.getElementById('detailedSopChart');
+  if(!canvas || typeof Chart==='undefined') return;
+
+  const rows=D.detailed_sop.rows;
+  const norm=s=>String(s||'').trim().toLowerCase();
+  const exact=(...names)=>{
+    const set=names.map(norm);
+    return rows.find(r=>set.includes(norm(r.particulars)));
+  };
+  const contains=term=>rows.find(r=>norm(r.particulars).includes(norm(term)));
+  const value=r=>Number(r?.values?.[2]||0); // FY 2026-27 column
+
+  // Use the Overall rows where available.
+  const revenue=exact('revenues','total revenue') || contains('overall revenue') || rows.find(r=>norm(r.particulars)==='revenue');
+  const gm=exact('gross margin','total gross margin') || contains('gross margin');
+  const eb=contains('ebitda');
+  const pbt=contains('profit before tax') || exact('pbt');
+
+  const labels=['Revenue','Gross Margin','EBITDA','PBT'];
+  const vals=[value(revenue),value(gm),value(eb),value(pbt)];
+
+  if(window.__detailedSopChart) window.__detailedSopChart.destroy();
+  window.__detailedSopChart=new Chart(canvas,{
+    type:'bar',
+    data:{
+      labels,
+      datasets:[{
+        label:'FY 2026-27 Overall',
+        data:vals,
+        backgroundColor:[INK,POS,POS,NEG],
+        borderRadius:3,
+        maxBarThickness:60
+      }]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` ${usd(c.parsed.y)}`}}
+      },
+      scales:{
+        x:{grid:{display:false}},
+        y:{grid:{color:LINE},ticks:{callback:v=>usd(v)}}
+      }
+    }
+  });
+}
+
+
+function renderCostAnalysis(){
+  if(!D)return;
+  const source=D.sga_breakdown_ytd||{};
+  const entries=Object.entries(source).map(([k,v])=>[k,Number(v)||0]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  const total=Number(D.ytd?.sga||entries.reduce((a,x)=>a+x[1],0));
+  const peopleTerms=['sales commission & bonus','payroll onsite','payroll offshore','payroll pss nonbillable'];
+  const people=entries.filter(([k])=>peopleTerms.some(t=>k.toLowerCase().includes(t))).reduce((a,x)=>a+x[1],0);
+  const largest=entries[0]||['—',0];
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+  set('costTotal',usd(total));set('costPeople',usd(people));set('costPeoplePct',total?(people/total*100).toFixed(1)+'%':'—');set('costLargest',largest[0]);set('costLargestFoot',usd(largest[1])+' YTD');
+  const top3=entries.slice(0,3).reduce((a,x)=>a+x[1],0);const ins=document.getElementById('costAnalysisInsight');if(ins)ins.innerHTML=`S&amp;GA totals <b>${usd(total)}</b> YTD. The three largest cost categories account for <b>${total?(top3/total*100).toFixed(1):0}%</b> of S&amp;GA; <b>${largest[0]}</b> is the largest individual driver at <b>${usd(largest[1])}</b>.`;
+  if(typeof Chart==='undefined')return;
+  const c1=document.getElementById('costAnalysisChart'),c2=document.getElementById('costConcentrationChart');
+  if(c1){if(window.__costChart)window.__costChart.destroy();window.__costChart=new Chart(c1,{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'S&GA',data:entries.map(x=>x[1]),backgroundColor:entries.map((_,i)=>i<3?INK:ACCENT),borderRadius:3,maxBarThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${usd(c.parsed.x)}`}}},scales:{x:{grid:{color:LINE},ticks:{callback:v=>usd(v)}},y:{grid:{display:false}}}}});}
+  if(c2){const top=entries.slice(0,6);if(window.__costConcentrationChart)window.__costConcentrationChart.destroy();window.__costConcentrationChart=new Chart(c2,{type:'doughnut',data:{labels:top.map(x=>x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:[INK,ACCENT,POS,'#9CC0FA','#B7C4D4','#D9E0E7'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${usd(c.parsed)} (${total?(c.parsed/total*100).toFixed(1):0}%)`}}}}});}
+}
 async function main(){
- try{await ensureChartJs();await loadData();render();renderSummarySOP();renderDetailedSOP();renderBalanceSheet();renderCashFlow()}
+ try{await ensureChartJs();await loadData();render();renderSummarySOP();renderCostAnalysis();renderDetailedSOP();renderDetailedSopChart();renderBalanceSheet();renderCashFlow()}
  catch(e){
    document.getElementById('asof').textContent='DATA LOAD ERROR';
    document.getElementById('executiveSummary').innerHTML='<b>Dashboard data error.</b> '+e.message+' The page includes an embedded MIS snapshot, so this should only occur if Chart.js itself is unavailable.';
