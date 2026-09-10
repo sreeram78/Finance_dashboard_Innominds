@@ -1,131 +1,373 @@
 #!/usr/bin/env python3
-"""Extract P&L, Summary SOP, Balance Sheet and Cash Flow from Nymi MIS XLSB."""
-import sys, json, glob, argparse
+"""
+Nymi Inc MIS extractor
+----------------------
+Reads the XLSB MIS workbook and writes data/financials.json.
+
+Sources:
+  - Summary SOP
+  - Detailed SOP
+  - Balance sheet
+
+The Detailed SOP extraction is header-driven rather than relying on fixed
+row/column positions. This makes it safer when rows are inserted or moved
+in the Excel workbook.
+
+Usage:
+    python scripts/extract_data.py "Statement Of Financial MIS Aug26 Provisional V3 1.xlsb"
+"""
+
 from pathlib import Path
 from datetime import datetime, timedelta
+import json
+import math
+import re
+import sys
+
 from pyxlsb import open_workbook
 
-COL_FY_CURRENT=3; COL_FY_PRIOR=4; COL_MONTHS_START=10; N_MONTHS_ACTUAL=5
-FY_START_CALENDAR_YEAR=26
-MONTH_LABELS=["Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"]
-ROW_MAP={
- "product_rev":15,"product_cogs":22,"product_gp":23,"service_rev":28,"service_cogs":31,"service_gm":32,"sub_rev":36,"sub_cogs":39,"sub_gm":40,"total_rev":43,"total_cogs":44,"total_gm":45,"total_gm_pct":46,
- "payroll_onsite":49,"payroll_offshore":50,"payroll_pss_nonbillable":51,"third_party_contractors":52,"sales_commission_bonus":53,"travel_entertainment":54,"marketing_campaign_events":55,"communication":56,"dues_subscriptions":57,"rent_utilities":58,"professional_fee":59,"insurance":60,"other_expenses_ga":61,"total_sga":63,"ebitda":65,"ebitda_pct":66,"finance_charges":67,"depreciation":68,"other_income_exp":69,"pbt":70,"pbt_pct":71,"tax":72,"pat":73}
-SGA_LABELS={"sales_commission_bonus":"Sales commission & bonus","payroll_onsite":"Payroll & benefits – onsite","payroll_offshore":"Payroll & benefits – offshore","payroll_pss_nonbillable":"Payroll PSS non-billable","third_party_contractors":"Third-party contractors","other_expenses_ga":"Other G&A expenses","dues_subscriptions":"Dues & subscriptions","travel_entertainment":"Travel & entertainment","professional_fee":"Professional fees","insurance":"Insurance","marketing_campaign_events":"Marketing, campaigns & events","rent_utilities":"Rent & utilities","communication":"Communication"}
 
-def find_workbook(cli_path):
-    if cli_path:
-        p=Path(cli_path)
-        if not p.exists(): sys.exit(f"File not found: {p}")
-        return p
-    candidates=glob.glob(str(Path(__file__).resolve().parents[1]/"*.xlsb"))
-    if len(candidates)==1: return Path(candidates[0])
-    sys.exit("Pass the workbook path explicitly when more than one .xlsb exists: "+str(candidates))
+MONTHS = ["Apr-26", "May-26", "Jun-26", "Jul-26", "Aug-26",
+          "Sep-26", "Oct-26", "Nov-26", "Dec-26", "Jan-27", "Feb-27", "Mar-27"]
 
-def read_sheet_rows(path,sheet):
-    with open_workbook(str(path)) as wb:
-        with wb.get_sheet(sheet) as sh: return list(sh.rows())
+# Excel/XLSB serial date conversion.
+def excel_date(value):
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        try:
+            # Excel 1900 date system
+            return datetime(1899, 12, 30) + timedelta(days=float(value))
+        except Exception:
+            return None
+    return None
 
-def row_values(rows,idx,cols):
-    if idx>=len(rows): return [0 for _ in cols]
-    m={c.c:c.v for c in rows[idx]}
-    return [m.get(c,0) or 0 for c in cols]
 
-def excel_date(v):
-    if isinstance(v,(int,float)):
-        try: return (datetime(1899,12,30)+timedelta(days=float(v))).strftime('%b-%y')
-        except Exception: pass
-    return str(v) if v not in (None,"") else ""
+def clean(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = value.strip()
+        if not value:
+            return None
+        # pyxlsb can expose malformed/future cells such as 0x17.
+        if value.lower() in {"0x17", "#n/a", "#na", "n/a", "na", "-"}:
+            return None
+    return value
 
-def clean_number(v):
-    if v is None or isinstance(v,bool): return None
-    if isinstance(v,(int,float)): return float(v)
-    try: return float(str(v).replace(',',''))
-    except Exception: return None
 
-def extract_pnl(rows):
-    month_cols=list(range(COL_MONTHS_START,COL_MONTHS_START+N_MONTHS_ACTUAL))
-    labels=[f"{MONTH_LABELS[i]}-{FY_START_CALENDAR_YEAR+(1 if i>=9 else 0):02d}" for i in range(N_MONTHS_ACTUAL)]
-    series={}
-    for k,r in ROW_MAP.items():
-        monthly=row_values(rows,r,month_cols); ytd=row_values(rows,r,[COL_FY_CURRENT])[0]; prior=row_values(rows,r,[COL_FY_PRIOR])[0]
-        series[k]={"monthly":monthly,"ytd":ytd,"prior_fy_full":prior}
+def number(value):
+    value = clean(value)
+    if value is None:
+        return 0.0
+    if isinstance(value, bool):
+        return float(value)
+    if isinstance(value, (int, float)):
+        return float(value)
+    s = str(value).replace(",", "").replace("$", "").strip()
+    s = s.replace("(", "-").replace(")", "")
+    try:
+        return float(s)
+    except Exception:
+        return 0.0
+
+
+def row_values(sheet, row_num):
+    """Return one XLSB row as a list of raw values."""
+    with open_workbook(WORKBOOK) as wb:
+        with wb.get_sheet(sheet) as ws:
+            for i, row in enumerate(ws.rows(), start=1):
+                if i == row_num:
+                    return [c.v for c in row]
+    return []
+
+
+def read_sheet(sheet_name):
+    with open_workbook(WORKBOOK) as wb:
+        with wb.get_sheet(sheet_name) as ws:
+            return [[c.v for c in row] for row in ws.rows()]
+
+
+def find_header_row(rows, required_terms):
+    """Find the row containing the highest number of required header terms."""
+    best = None
+    best_score = -1
+    for i, row in enumerate(rows):
+        texts = [str(clean(v) or "").strip().lower() for v in row]
+        score = sum(
+            any(term.lower() in text for text in texts)
+            for term in required_terms
+        )
+        if score > best_score:
+            best_score = score
+            best = i
+    return best
+
+
+def normalize_header(value):
+    value = clean(value)
+    if value is None:
+        return ""
+    d = excel_date(value)
+    if d:
+        return d.strftime("%b-%y")
+    return re.sub(r"\s+", " ", str(value)).strip()
+
+
+def make_unique_headers(raw_headers):
+    """Preserve duplicate labels while giving them unique internal names."""
+    result = []
+    seen = {}
+    for h in raw_headers:
+        h = normalize_header(h)
+        if not h:
+            h = "Blank"
+        n = seen.get(h, 0)
+        seen[h] = n + 1
+        result.append(h if n == 0 else f"{h}__{n+1}")
+    return result
+
+
+def extract_detailed_sop():
+    """
+    Extract Detailed SOP using the worksheet's own headers.
+
+    Output:
+      {
+        "headers": [...],
+        "rows": [
+          {
+            "row": <1-based Excel row>,
+            "particulars": "...",
+            "values": [...]
+          }
+        ]
+      }
+
+    The values array follows the same header order as the workbook.
+    """
+    rows = read_sheet("Detailed SOP")
+
+    # Find the row containing the financial period headers.
+    header_idx = find_header_row(
+        rows,
+        ["FY 25-26", "FY 2026-27", "Apr", "May", "Jun", "Jul", "Aug"]
+    )
+    if header_idx is None:
+        raise RuntimeError("Could not locate Detailed SOP period header row.")
+
+    raw_header = rows[header_idx]
+    headers = make_unique_headers(raw_header)
+
+    # Find the particulars column. Usually column B, but discover it.
+    particulars_col = 1
+    for j, v in enumerate(raw_header):
+        t = str(clean(v) or "").lower()
+        if "particular" in t or "description" in t or "account" in t:
+            particulars_col = j
+            break
+
+    extracted = []
+    for excel_row, row in enumerate(rows[header_idx + 1:], start=header_idx + 2):
+        if not row:
+            continue
+
+        # Extend short rows so indexes always match headers.
+        values = list(row) + [None] * max(0, len(headers) - len(row))
+        particulars = clean(values[particulars_col])
+
+        # Ignore completely empty rows.
+        numeric_or_text = [clean(v) for v in values]
+        if particulars is None and not any(v is not None for v in numeric_or_text):
+            continue
+
+        # Keep section/subtotal rows as well as numeric rows.
+        data = []
+        for v in values:
+            x = clean(v)
+            data.append(number(x) if isinstance(x, (int, float)) or
+                        (isinstance(x, str) and re.match(r"^[\(\)\-\$,\d\. ]+$", x))
+                        else x)
+
+        extracted.append({
+            "row": excel_row,
+            "particulars": str(particulars) if particulars is not None else "",
+            "values": data
+        })
+
     return {
-      "months":labels,"revenue":{"product":series["product_rev"]["monthly"],"service":series["service_rev"]["monthly"],"subscription":series["sub_rev"]["monthly"],"total":series["total_rev"]["monthly"]},
-      "gm_pct":series["total_gm_pct"]["monthly"],"cogs":series["total_cogs"]["monthly"],"gross_margin":series["total_gm"]["monthly"],"sga":series["total_sga"]["monthly"],"ebitda":series["ebitda"]["monthly"],"ebitda_pct":series["ebitda_pct"]["monthly"],"pbt":series["pbt"]["monthly"],"finance_charges":series["finance_charges"]["monthly"],"depreciation":series["depreciation"]["monthly"],"other_income_exp":series["other_income_exp"]["monthly"],
-      "ytd":{"revenue":series["total_rev"]["ytd"],"cogs":series["total_cogs"]["ytd"],"gross_margin":series["total_gm"]["ytd"],"gm_pct":series["total_gm_pct"]["ytd"],"sga":series["total_sga"]["ytd"],"ebitda":series["ebitda"]["ytd"],"ebitda_pct":series["ebitda_pct"]["ytd"],"finance_charges":series["finance_charges"]["ytd"],"depreciation":series["depreciation"]["ytd"],"other_income_exp":series["other_income_exp"]["ytd"],"pbt":series["pbt"]["ytd"],"pbt_pct":series["pbt"]["ytd"]/series["total_rev"]["ytd"] if series["total_rev"]["ytd"] else 0},
-      "fy_prior_full":{"revenue":series["total_rev"]["prior_fy_full"],"gross_margin":series["total_gm"]["prior_fy_full"],"gm_pct":series["total_gm"]["prior_fy_full"]/series["total_rev"]["prior_fy_full"] if series["total_rev"]["prior_fy_full"] else 0,"ebitda":series["ebitda"]["prior_fy_full"],"ebitda_pct":series["ebitda"]["prior_fy_full"]/series["total_rev"]["prior_fy_full"] if series["total_rev"]["prior_fy_full"] else 0,"pbt":series["pbt"]["prior_fy_full"]},
-      "sga_breakdown_ytd":{label:series[key]["ytd"] for key,label in SGA_LABELS.items()}
+        "headers": headers,
+        "header_row": header_idx + 1,
+        "particulars_column": particulars_col + 1,
+        "rows": extracted
     }
 
-def extract_summary(rows):
-    # Source: Summary SOP. Columns: C=Particulars, D:J annual/quarterly, K:V monthly.
-    headers=[]
-    for c in range(3,23):
-        cell_map={x.c:x.v for x in rows[5]}
-        v=cell_map.get(c)
-        headers.append(excel_date(v) if c>=10 and v is not None else (str(v) if v is not None else ""))
-    # Actual monthly columns are detected from populated values, rather than hard-coded to Aug.
-    data_rows=[]
-    for ridx in range(6,40):
-        vals=row_values(rows,ridx, list(range(2,23)))
-        particulars=vals[1]
-        if particulars is None or str(particulars).strip()=="": continue
-        clean=[]
-        for v in vals[2:]: clean.append(clean_number(v))
-        data_rows.append({"row":ridx+1,"particulars":str(particulars),"values":clean})
-    return {"source_sheet":"Summary SOP","title":"Statement of Financials FY 2026-27","entity":"Nymi Inc","headers":headers,"rows":data_rows}
 
-def extract_bs(rows):
-    # Balance sheet dates are in D:L (0-based 3:12). Keep only genuinely populated dates/values.
-    months=[]; cols=[]
-    for c in range(3,12):
-        d=row_values(rows,4,[c])[0]
-        label=excel_date(d)
-        if label: months.append(label); cols.append(c)
-    mapping={6:"ppe",7:"trade_receivables",8:"inventory",9:"cash",10:"other_assets",11:"total_assets",14:"shareholders_fund",15:"debts",16:"trade_payables",17:"deferred_revenue",18:"other_liabilities",19:"total_equity_liability"}
-    out={"source_sheet":"Balance sheet","months":months}
-    for ridx,key in mapping.items():
-        vals=[]
-        for c in cols:
-            v=row_values(rows,ridx,[c])[0]; n=clean_number(v)
-            vals.append(n)
-        # Exclude future zero-only columns when the entire row is unpopulated; retain actual zero if other rows support the month.
-        out[key]=vals
-    # rows 22-24 in the workbook are single current-period cash-flow metrics; take first numeric value across row.
-    for ridx,key in [(22,"change_wc"),(23,"change_capex"),(24,"fcf")]:
-        cell_map={x.c:x.v for x in rows[ridx]}
-        nums=[clean_number(v) for v in cell_map.values()]
-        nums=[n for n in nums if n is not None]
-        out[key]=nums[-1] if nums else 0
-    # Remove future columns if all core BS balances are None/zero for that month.
-    core=[out[k] for k in mapping.values()]
-    keep=[]
-    for i,m in enumerate(months):
-        populated=any(a[i] not in (None,0) for a in core)
-        if populated: keep.append(i)
-    for k in mapping.values(): out[k]=[out[k][i] for i in keep]
-    out["months"]=[months[i] for i in keep]
-    return out
+def extract_summary_sop():
+    """Same header-driven extraction for Summary SOP."""
+    rows = read_sheet("Summary SOP")
+    header_idx = find_header_row(
+        rows,
+        ["FY 25-26", "FY 2026-27", "Apr", "May", "Jun", "Jul", "Aug"]
+    )
+    if header_idx is None:
+        raise RuntimeError("Could not locate Summary SOP period header row.")
 
-def extract(path):
-    pnl=extract_pnl(read_sheet_rows(path,"Detailed SOP"))
-    summary=extract_summary(read_sheet_rows(path,"Summary SOP"))
-    bs=extract_bs(read_sheet_rows(path,"Balance sheet"))
-    pnl["summary_sop"]=summary; pnl["balance_sheet"]=bs
-    pnl["cash_flow"]={"change_wc":bs.pop("change_wc",0),"change_capex":bs.pop("change_capex",0),"fcf":bs.pop("fcf",0),"source_sheet":"Balance sheet"}
-    return pnl
+    raw_header = rows[header_idx]
+    headers = make_unique_headers(raw_header)
+
+    particulars_col = 1
+    for j, v in enumerate(raw_header):
+        t = str(clean(v) or "").lower()
+        if "particular" in t or "description" in t or "account" in t:
+            particulars_col = j
+            break
+
+    extracted = []
+    for excel_row, row in enumerate(rows[header_idx + 1:], start=header_idx + 2):
+        values = list(row) + [None] * max(0, len(headers) - len(row))
+        if not values:
+            continue
+        particulars = clean(values[particulars_col])
+        if particulars is None and not any(clean(v) is not None for v in values):
+            continue
+
+        data = []
+        for v in values:
+            x = clean(v)
+            data.append(number(x) if isinstance(x, (int, float)) else x)
+
+        extracted.append({
+            "row": excel_row,
+            "particulars": str(particulars) if particulars is not None else "",
+            "values": data
+        })
+
+    return {
+        "headers": headers,
+        "header_row": header_idx + 1,
+        "particulars_column": particulars_col + 1,
+        "rows": extracted
+    }
+
+
+def extract_balance_sheet():
+    rows = read_sheet("Balance sheet")
+    if len(rows) < 4:
+        return {}
+
+    # The supplied MIS has period headers on row 4.
+    header_idx = 3
+    headers = make_unique_headers(rows[header_idx])
+    particulars_col = 1
+
+    result_rows = []
+    for excel_row, row in enumerate(rows[header_idx + 1:], start=header_idx + 2):
+        values = list(row) + [None] * max(0, len(headers) - len(row))
+        label = clean(values[particulars_col]) if len(values) > particulars_col else None
+        if label is None:
+            continue
+        nums = [number(v) for v in values]
+        result_rows.append({
+            "row": excel_row,
+            "particulars": str(label),
+            "values": nums
+        })
+
+    # Keep only populated actual period columns.
+    actual_headers = []
+    actual_indices = []
+    for i, h in enumerate(headers):
+        if h in MONTHS or re.match(r"^(Jul|Aug)-\d\d$", h):
+            col_vals = [r["values"][i] for r in result_rows if i < len(r["values"])]
+            if any(abs(v) > 1e-9 for v in col_vals):
+                actual_headers.append(h)
+                actual_indices.append(i)
+
+    def find(label):
+        for r in result_rows:
+            if r["particulars"].strip().lower() == label.lower():
+                return r
+        return None
+
+    wanted = {
+        "ppe": "Property, Plant & Equipment",
+        "trade_receivables": "Trade Receivables",
+        "inventory": "Inventory",
+        "cash": "Cash & Bank",
+        "other_assets": "Other Assets",
+        "total_assets": "Total Assets",
+        "shareholders_fund": "Shareholder's Fund",
+        "debts": "Debts",
+        "trade_payables": "Trade Payables",
+        "deferred_revenue": "Deferred Revenue",
+        "other_liabilities": "Other Liabilities",
+        "total_equity_liability": "Total Eq. & Liability",
+    }
+
+    output = {"months": actual_headers}
+    for key, label in wanted.items():
+        r = find(label)
+        output[key] = [
+            r["values"][i] if r and i < len(r["values"]) else 0
+            for i in actual_indices
+        ]
+
+    # These are single values in the current worksheet.
+    for key, label in {
+        "change_wc": "Change in WC",
+        "change_capex": "Change in Capex",
+        "fcf": "FCF",
+    }.items():
+        r = find(label)
+        output[key] = r["values"][actual_indices[-1]] if r and actual_indices else 0
+
+    return output
+
 
 def main():
-    ap=argparse.ArgumentParser(); ap.add_argument("workbook",nargs="?"); ap.add_argument("-o","--output")
-    a=ap.parse_args(); path=find_workbook(a.workbook); data=extract(path)
-    out=Path(a.output) if a.output else Path(__file__).resolve().parents[1]/"data"/"financials.json"
-    out.parent.mkdir(parents=True,exist_ok=True); out.write_text(json.dumps(data,indent=2,allow_nan=False))
-    print(f"Wrote {out} from {path.name}")
-    print(f"Revenue YTD: {data['ytd']['revenue']:,.0f}")
-    print(f"EBITDA YTD: {data['ytd']['ebitda']:,.0f}")
-    print(f"PBT YTD: {data['ytd']['pbt']:,.0f}")
-    print(f"Summary SOP rows: {len(data['summary_sop']['rows'])}")
-    print(f"Balance Sheet months: {data['balance_sheet']['months']}")
-    print(f"FCF: {data['cash_flow']['fcf']:,.0f}")
-if __name__=='__main__': main()
+    global WORKBOOK
+
+    if len(sys.argv) > 1:
+        WORKBOOK = Path(sys.argv[1]).expanduser().resolve()
+    else:
+        # Default: workbook in project root.
+        WORKBOOK = Path(__file__).resolve().parents[1] / \
+            "Statement Of Financial MIS Aug26 Provisional V3 1.xlsb"
+
+    if not WORKBOOK.exists():
+        raise FileNotFoundError(f"Workbook not found: {WORKBOOK}")
+
+    project_root = Path(__file__).resolve().parents[1]
+    data_dir = project_root / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    detailed = extract_detailed_sop()
+    summary = extract_summary_sop()
+    bs = extract_balance_sheet()
+
+    # Preserve the detailed/summary workbook data in a clean, explicit schema.
+    payload = {
+        "source": WORKBOOK.name,
+        "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "months": MONTHS,
+        "summary_sop": summary,
+        "detailed_sop": detailed,
+        "balance_sheet": bs,
+    }
+
+    output = data_dir / "financials.json"
+    output.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False, allow_nan=False),
+        encoding="utf-8"
+    )
+
+    print(f"Workbook : {WORKBOOK}")
+    print(f"Summary SOP rows  : {len(summary['rows'])}")
+    print(f"Detailed SOP rows : {len(detailed['rows'])}")
+    print(f"BS periods        : {bs.get('months', [])}")
+    print(f"Wrote             : {output}")
+
+
+if __name__ == "__main__":
+    main()
