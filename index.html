@@ -404,12 +404,13 @@ async function loadData(){
         candidate &&
         typeof candidate === 'object' &&
         candidate.revenue &&
+        candidate.revenue.total &&
         candidate.ytd &&
-        (
-          candidate.summary_sop ||
-          candidate.detailed_sop ||
-          candidate.balance_sheet
-        );
+        candidate.ytd.revenue != null &&
+        candidate.ytd.ebitda != null &&
+        candidate.ytd.pbt != null &&
+        candidate.summary_sop &&
+        candidate.detailed_sop;
 
       if(valid){
         D=candidate;
@@ -819,31 +820,38 @@ function renderCharts(){
 async function main(){
   const status=document.getElementById('asof');
   try{
+    // Always start with the complete embedded MIS snapshot.
     await loadData();
 
-    // Render each section independently.
-    try{ if(typeof render==='function') render(); }catch(e){ console.error('Main dashboard:',e); }
-    try{ if(typeof renderSummarySOP==='function') renderSummarySOP(); }catch(e){ console.error('Summary SOP:',e); }
-    try{ if(typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(e){ console.error('Detailed SOP:',e); }
-    try{ if(typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(e){ console.error('Cost Analysis:',e); }
-    try{ if(typeof renderBalanceSheet==='function') renderBalanceSheet(); }catch(e){ console.error('Balance Sheet:',e); }
-    try{ if(typeof renderCashFlow==='function') renderCashFlow(); }catch(e){ console.error('Cash Flow:',e); }
-
+    // CRITICAL: Chart.js must be loaded BEFORE any render function
+    // because the main render() creates the dashboard charts.
     const chartsReady=await ensureChartJs();
+
+    // Render every section independently.
+    try{ if(typeof render==='function') render(); }catch(e){ console.error('Main dashboard render:',e); }
+    try{ if(typeof renderSummarySOP==='function') renderSummarySOP(); }catch(e){ console.error('Summary SOP render:',e); }
+    try{ if(typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(e){ console.error('Detailed SOP render:',e); }
+    try{ if(typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(e){ console.error('Cost Analysis render:',e); }
+    try{ if(typeof renderBalanceSheet==='function') renderBalanceSheet(); }catch(e){ console.error('Balance Sheet render:',e); }
+    try{ if(typeof renderCashFlow==='function') renderCashFlow(); }catch(e){ console.error('Cash Flow render:',e); }
+
     if(chartsReady){
+      // Dedicated charts whose rendering is separate from render().
       try{ if(typeof renderDetailedSopChart==='function') renderDetailedSopChart(); }catch(e){ console.error('Detailed SOP chart:',e); }
-      if(status && !/LIVE JSON DATA/.test(status.textContent)) status.textContent='MIS DATA LOADED · CHARTS READY';
+      if(status) status.textContent='MIS DATA LOADED · ALL CHARTS READY';
     }else{
-      if(status && !/LIVE JSON DATA/.test(status.textContent)) status.textContent='MIS DATA LOADED · CHART LIBRARY UNAVAILABLE';
+      if(status) status.textContent='MIS DATA LOADED · CHART LIBRARY UNAVAILABLE';
     }
   }catch(e){
-    // Last-resort recovery: use the embedded data and render whatever is available.
     console.error('Dashboard startup error:',e);
+    // Embedded data remains the final fallback.
     try{ D=EMBEDDED_DATA; }catch(_){}
     if(status) status.textContent='EMBEDDED MIS DATA';
-    try{ if(typeof render==='function') render(); }catch(_){}
-    try{ if(typeof renderSummarySOP==='function') renderSummarySOP(); }catch(_){}
-    try{ if(typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(_){}
+    // If Chart.js is already available, retry the visual layer.
+    try{ if(window.Chart && typeof render==='function') render(); }catch(_){}
+    try{ if(window.Chart && typeof renderSummarySOP==='function') renderSummarySOP(); }catch(_){}
+    try{ if(window.Chart && typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(_){}
+    try{ if(window.Chart && typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(_){}
   }
 }
 main();
