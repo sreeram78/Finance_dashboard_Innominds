@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CFO Dashboard</title>
+<title>Nymi Inc — AI Enabled CFO Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
 <style>
 :root{
   --navy:#092B52; --navy2:#123E70; --blue:#1F6FEB; --orange:#E58A2B;
@@ -157,7 +157,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
     <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
     <div class="asof" id="asof">LOADING DATA…</div>
   </div>
-  <h1>CFO Dashboard</h1>
+  <h1>AI Enabled CFO Dashboard</h1>
   <div class="subtitle">Executive performance, variance, profitability and financial statement analysis · FY2026–27</div>
   <nav class="nav">
     <a href="#summary">Executive Summary</a>
@@ -757,29 +757,65 @@ function toggleSopGroup(group){
 
 
 async function ensureChartJs(){
-  if(window.Chart) return;
-  await new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js';
-    s.onload=resolve;
-    s.onerror=()=>reject(new Error('Chart.js could not be loaded from either CDN.'));
-    document.head.appendChild(s);
-  });
-  if(!window.Chart) throw new Error('Chart.js is unavailable.');
+  if(window.Chart) return true;
+  const sources=[
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js'
+  ];
+  for(const src of sources){
+    try{
+      await new Promise((resolve,reject)=>{
+        const el=document.createElement('script');
+        el.src=src;
+        el.onload=resolve;
+        el.onerror=()=>reject(new Error('Unable to load '+src));
+        document.head.appendChild(el);
+      });
+      if(window.Chart) return true;
+    }catch(e){ console.warn(e.message); }
+  }
+  return false;
+}
+
+
+function renderCharts(){
+  // Main dashboard charts are built by render().
+  return true;
 }
 
 async function main(){
- try{await ensureChartJs();await loadData();render();renderSummarySOP();renderDetailedSOP();renderDetailedSopChart();renderCostAnalysis();renderBalanceSheet();renderCashFlow()}
- catch(e){
-   document.getElementById('asof').textContent='DATA LOAD ERROR';
-   document.getElementById('executiveSummary').innerHTML='<b>Dashboard data error.</b> '+e.message+' The page includes an embedded MIS snapshot, so this should only occur if Chart.js itself is unavailable.';
-   console.error(e);
- }
+  try{
+    await loadData();
+
+    // Always render the data/table sections first.
+    try{ render(); }catch(e){ console.error('Executive/P&L render error:',e); }
+    try{ renderSummarySOP(); }catch(e){ console.error('Summary SOP render error:',e); }
+    try{ renderDetailedSOP(); }catch(e){ console.error('Detailed SOP render error:',e); }
+    try{ renderBalanceSheet(); }catch(e){ console.error('Balance Sheet render error:',e); }
+    try{ renderCashFlow(); }catch(e){ console.error('Cash Flow render error:',e); }
+
+    // Charts are optional if a CDN is temporarily unavailable.
+    const chartsReady=await ensureChartJs();
+    if(chartsReady){
+      try{ renderDetailedSopChart(); }catch(e){ console.error('Detailed SOP chart error:',e); }
+      try{ renderCostAnalysis(); }catch(e){ console.error('Cost analysis chart error:',e); }
+      try{ renderCharts(); }catch(e){ console.error('Main chart error:',e); }
+      document.getElementById('asof').textContent=
+        (document.getElementById('asof').textContent||'') + ' · CHARTS READY';
+    }else{
+      console.warn('Chart.js unavailable; dashboard data and tables remain available.');
+      const asof=document.getElementById('asof');
+      if(asof) asof.textContent='DATA LOADED · CHART LIBRARY UNAVAILABLE';
+    }
+  }catch(e){
+    const asof=document.getElementById('asof');
+    if(asof) asof.textContent='DATA LOAD ERROR';
+    const ex=document.getElementById('executiveSummary');
+    if(ex) ex.innerHTML='<b>Dashboard data error.</b> '+e.message;
+    console.error(e);
+  }
 }
 main();
-
-
-
 
 </script>
 
