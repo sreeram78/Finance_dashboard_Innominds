@@ -1,1 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nymi Inc — AI Enabled CFO Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 
+<style>
+:root{
+  --navy:#092B52; --navy2:#123E70; --blue:#1F6FEB; --orange:#E58A2B;
+  --green:#1E7145; --red:#AE3A2E; --ink:#162536; --muted:#657383;
+  --bg:#F2F5F8; --card:#fff; --line:#D8E0E8; --soft:#EEF3F8;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",Arial,sans-serif}
+.header{background:var(--navy);color:#fff;padding:18px 26px 22px;border-bottom:5px solid var(--orange);position:sticky;top:0;z-index:20}
+.header-top{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:1450px;margin:auto}
+.brand{font-weight:700;letter-spacing:.04em;font-size:14px}
+.asof{font-size:12px;opacity:.8}
+h1{max-width:1450px;margin:14px auto 0;font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:500}
+.subtitle{max-width:1450px;margin:5px auto 0;color:#C8D8EA;font-size:13px}
+.nav{max-width:1450px;margin:15px auto 0;display:flex;gap:6px;overflow:auto;padding-bottom:2px}
+.nav a{white-space:nowrap;text-decoration:none;color:#D9E5F2;border:1px solid rgba(255,255,255,.18);padding:7px 11px;border-radius:4px;font-size:11px}
+.nav a:hover{background:rgba(255,255,255,.12)}
+.wrap{max-width:1450px;margin:auto;padding:24px 24px 70px}
+.section{margin:0 0 28px}
+.section-title{background:var(--navy);color:#fff;padding:8px 13px;border-radius:5px 5px 0 0;font-size:15px;font-weight:700;display:flex;justify-content:space-between;align-items:center}
+.section-title span{font-size:10px;font-weight:500;opacity:.75}
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:0 0 5px 5px;padding:15px}
+.card.round{border-radius:5px}
+.kpi{background:#fff;border:1px solid var(--line);padding:14px;border-radius:5px;position:relative;overflow:hidden}
+.kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--blue)}
+.kpi.orange:before{background:var(--orange)} .kpi.green:before{background:var(--green)} .kpi.red:before{background:var(--red)}
+.kpi-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi-value{font-family:Fraunces,Georgia,serif;font-size:26px;color:var(--navy);margin:5px 0}
+.kpi-foot{font-size:10px;color:var(--muted)}
+.insight{background:#F8FAFC;border-left:4px solid var(--orange);padding:11px 13px;font-size:12px;line-height:1.55;margin-bottom:12px}
+.insight b{color:var(--navy)}
+.chart{height:265px;position:relative}
+.chart.tall{height:330px}
+.revenue-mix-card{min-height:410px}
+.revenue-mix-chart{height:355px}
+.revenue-mix-chart{display:flex;align-items:center;justify-content:center}
+.revenue-mix-chart canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.donut-center{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  text-align:center;
+  pointer-events:none;
+  z-index:2;
+  width:170px;
+}
+.donut-total{
+  font-family:Fraunces,Georgia,serif;
+  font-weight:600;
+  font-size:30px;
+  line-height:1.05;
+  color:var(--navy);
+}
+.donut-label{
+  margin-top:8px;
+  font-size:15px;
+  line-height:1.2;
+  color:var(--muted);
+  font-weight:500;
+}
+.card-title{font-weight:700;color:var(--navy);font-size:12px;margin-bottom:2px}
+.card-sub{font-size:10px;color:var(--muted);margin-bottom:10px}
+.legend{font-size:10px;color:var(--muted);margin-bottom:5px}
+table{width:100%;border-collapse:collapse;font-size:10px}
+th{background:var(--soft);color:var(--navy);font-weight:700;padding:7px 6px;text-align:right;border-bottom:2px solid var(--navy)}
+th:first-child,td:first-child{text-align:left}
+td{padding:6px;border-bottom:1px solid var(--line);text-align:right}
+tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)}
+.neg{color:var(--red)!important}.pos{color:var(--green)!important}
+.bullet{display:flex;gap:8px;margin:8px 0;font-size:11px;line-height:1.45}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--orange);margin-top:5px;flex:none}
+.placeholder{min-height:230px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted);background:#F8FAFC;border:1px dashed #B8C5D2;border-radius:5px;font-size:12px;padding:30px}
+.placeholder strong{display:block;color:var(--navy);font-size:14px;margin-bottom:5px}
+.badge{font-size:9px;border-radius:3px;padding:3px 6px;background:#FFF0DE;color:#9B5B0B;font-weight:700}
+.footer{border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:10px;line-height:1.6}
+@media(max-width:1000px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.wrap{padding:14px 10px 50px}.g2,.g3,.g4{grid-template-columns:1fr}.header{padding:14px 12px 16px}h1{font-size:23px}.nav a{font-size:10px}}
+
+/* Summary SOP — Excel-style presentation */
+.sop-wrap{overflow-x:auto;border:1px solid #aab4c2;background:#fff}
+.sop-excel{border-collapse:collapse;min-width:1450px;width:100%;font-size:11px;font-family:'IBM Plex Sans',Arial,sans-serif}
+.sop-excel th,.sop-excel td{border:1px solid #9da8b5;padding:5px 7px;white-space:nowrap}
+.sop-excel thead th{background:#315a96;color:#fff;text-align:center;font-weight:700;font-size:10.5px}
+.sop-excel thead th.left{text-align:left}
+.sop-excel thead .bms-row th{background:#fff;border:none;height:24px;color:#111}
+.sop-excel thead .bms-row th.bms{background:#78be20;color:#111;border:1px solid #fff;font-weight:700}
+.sop-excel tbody td{text-align:right;font-variant-numeric:tabular-nums}
+.sop-excel tbody td.part{text-align:left}
+.sop-excel tbody td.sno{text-align:center;width:38px}
+.sop-excel tbody tr.section-row td{background:#d9d9d9;font-weight:700;color:#111}
+.sop-excel tbody tr.total-row td{background:#eef2f7;font-weight:700}
+.sop-excel tbody tr.pct-row td{font-weight:700}
+.sop-excel tbody td.neg{color:#c62828}
+.sop-excel tbody td.future{color:#666}
+.sop-note{font-size:11px;color:var(--muted);margin-top:8px}
+
+/* Summary SOP column controls */
+.sop-controls{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:0 0 10px}
+.sop-controls button{border:1px solid #9da8b5;background:#f5f7fa;color:#17365d;border-radius:4px;padding:6px 10px;font:600 10.5px 'IBM Plex Sans',Arial,sans-serif;cursor:pointer}
+.sop-controls button:hover{background:#e7edf5}
+.sop-controls button.active{background:#315a96;color:#fff;border-color:#315a96}
+.sop-controls .hint{font-size:10.5px;color:var(--muted);margin-left:4px}
+.sop-excel th.col-hidden,.sop-excel td.col-hidden{display:none}
+.sop-excel th.col-collapsed,.sop-excel td.col-collapsed{width:30px!important;min-width:30px!important;max-width:30px!important;padding-left:3px!important;padding-right:3px!important;overflow:hidden}
+.sop-excel td.col-collapsed{color:transparent!important;font-size:0}
+.sop-excel th.col-collapsed .sop-head-label{display:none}
+.sop-head-label{vertical-align:middle}
+.sop-col-toggle{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;margin-left:4px;padding:0;border:1px solid rgba(255,255,255,.65);border-radius:3px;background:rgba(255,255,255,.14);color:#fff;font:700 12px/1 Arial,sans-serif;cursor:pointer;vertical-align:middle}
+.sop-col-toggle:hover{background:rgba(255,255,255,.30)}
+.sop-col-toggle .toggle-icon{font-size:13px;line-height:1}
+.sop-individual-note{font-size:10px;color:var(--muted);margin:7px 0 0}
+
+  .sop-donut-wrap{position:relative;}
+  .sop-donut-center{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-54%);
+    text-align:center;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .sop-donut-total{
+    font-family:'Fraunces',Georgia,serif;
+    font-size:28px;
+    line-height:1.05;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .sop-donut-label{
+    margin-top:6px;
+    font-size:11px;
+    color:var(--muted);
+    font-weight:600;
+    letter-spacing:.02em;
+  }
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-top">
+    <div class="brand">NYMI INC · OFFICE OF THE CFO</div>
+    <div class="asof" id="asof">LOADING DATA…</div>
+  </div>
+  <h1>AI Enabled CFO Dashboard</h1>
+  <div class="subtitle">Executive performance, variance, profitability and financial statement analysis · FY2026–27</div>
+  <nav class="nav">
+    <a href="#summary">Executive Summary</a>
+    <a href="#performance">YTD Performance</a>
+    <a href="#sop">Summary SOP</a>
+    <a href="#detailedSop">Detailed SOP</a>
+    <a href="#variance">Variance & Drivers</a>
+    <a href="#pl">Income Statement</a>
+    <a href="#bs">Balance Sheet</a>
+    <a href="#roe">Return on Equity</a>
+    <a href="#cf">Cash Flow</a>
+    <a href="#liquidity">Liquidity</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<section class="section" id="summary">
+  <div class="section-title">Executive Summary for CFO <span id="summaryPeriod">YTD</span></div>
+  <div class="card">
+    <div class="insight" id="executiveSummary">Loading executive summary…</div>
+    <div class="grid g4" id="summaryKpis"></div>
+    <div class="grid g3" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Revenue trend</div><div class="card-sub">Monthly total revenue</div><div class="chart"><canvas id="summaryRevenue"></canvas></div></div>
+      <div class="card round"><div class="card-title">EBITDA trend</div><div class="card-sub">Monthly EBITDA</div><div class="chart"><canvas id="summaryEbitda"></canvas></div></div>
+      <div class="card round revenue-mix-card"><div class="card-title">Revenue mix — current month</div><div class="card-sub" id="mixPeriod">Latest reported month</div><div class="chart revenue-mix-chart">
+        <canvas id="summaryMix"></canvas>
+        <div class="donut-center" id="donutCenter">
+          <div class="donut-total" id="donutTotal">$0</div>
+          <div class="donut-label">Total revenue</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="performance">
+  <div class="section-title">YTD Performance Review <span>Revenue · GM · EBITDA · PBT</span></div>
+  <div class="card">
+    <div class="grid g4" id="performanceKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Revenue vs gross margin</div><div class="card-sub">Monthly trend</div><div class="chart tall"><canvas id="revGm"></canvas></div></div>
+      <div class="card round"><div class="card-title">EBITDA vs PBT</div><div class="card-sub">Monthly profitability</div><div class="chart tall"><canvas id="ebitdaPbt"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="sop">
+  <div class="section-title">Summary SOP <span id="sopPeriod">Statement of Financials FY 2026-27</span></div>
+  <div class="card">
+    <div class="grid g4" id="sopKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">FY 2026-27 Revenue — Overall by business line</div><div class="card-sub">Overall FY 2026-27 · Products, Services & Subscription</div><div class="chart tall sop-donut-wrap"><canvas id="sopRevenueMix"></canvas><div id="sopDonutCenter" class="sop-donut-center"><div class="sop-donut-total">—</div><div class="sop-donut-label">Total revenue</div></div></div></div>
+      <div class="card round"><div class="card-title">Profitability summary</div><div class="card-sub">FY 2026-27 YTD</div><div class="chart tall"><canvas id="sopProfitability"></canvas></div></div>
+    </div>
+    <div class="card round" style="margin-top:12px">
+      <div class="card-title">Summary SOP — MIS format</div>
+      <div class="card-sub">Same column structure as the workbook: FY, quarterly and monthly headers. Green cells identify “Including BMS” columns from the MIS presentation.</div>
+      <div class="sop-controls" aria-label="Summary SOP column controls">
+        <button type="button" id="sopShowAll" class="active" onclick="setSopGroup('all')">Show all</button>
+        <button type="button" id="sopFY" onclick="toggleSopGroup('fy')">Collapse FY</button>
+        <button type="button" id="sopQtr" onclick="toggleSopGroup('qtr')">Collapse quarters</button>
+        <button type="button" id="sopFuture" onclick="toggleSopGroup('future')">Collapse future months</button>
+        <button type="button" id="sopFYQtr" onclick="setSopGroup('fyqtr')">Monthly view</button>
+        <span class="hint">Use the ⊖ / ⊕ icon directly on selected headers to collapse or expand one column.</span>
+      </div>
+      <div class="sop-individual-note">Selected headers have a <b>⊖</b> toggle. Click it to collapse the column to a narrow rail; click <b>⊕</b> to expand it again.</div>
+      <div class="sop-wrap"><table id="sopTable" class="sop-excel"></table></div>
+      <div class="sop-note">Source: Summary SOP tab · FY 2025-26 through FY 2026-27 · Apr-26 through Mar-27. Future months remain as reported in the workbook.</div>
+    </div>
+  </div>
+
+</section>
+
+
+<section class="section" id="costAnalysis">
+  <div class="section-title">Cost Analysis <span>S&amp;GA Expenses</span></div>
+  <div class="card">
+    <div class="grid g4" id="costKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round">
+        <div class="card-title">S&amp;GA Expenses — YTD</div>
+        <div class="card-sub">Cost by category, highest to lowest</div>
+        <div class="chart tall"><canvas id="costAnalysisChart"></canvas></div>
+      </div>
+      <div class="card round">
+        <div class="card-title">S&amp;GA Cost Concentration</div>
+        <div class="card-sub">Top cost drivers as a share of total S&amp;GA</div>
+        <div class="chart tall"><canvas id="costConcentrationChart"></canvas></div>
+      </div>
+    </div>
+    <div class="insight" id="costAnalysisInsight" style="margin-top:12px">
+      Loading cost analysis…
+    </div>
+  </div>
+</section>
+
+<section class="section" id="detailedSop">
+  <div class="section-title">Detailed SOP <span>Statement of Financials FY 2026-27</span></div>
+  <div class="card">
+    <div class="card round" style="margin:0">
+      <div class="card-title">Detailed SOP — MIS format</div>
+      <div class="card-sub">Detailed revenue, COGS, gross margin, S&amp;GA and profitability lines using the same FY, quarterly and monthly headers as the MIS workbook.</div>
+      <div class="sop-controls" aria-label="Detailed SOP column controls">
+        <button type="button" id="detSopShowAll" class="active" onclick="setDetailedSopGroup('all')">Show all</button>
+        <button type="button" id="detSopFY" onclick="toggleDetailedSopGroup('fy')">Collapse FY</button>
+        <button type="button" id="detSopQtr" onclick="toggleDetailedSopGroup('qtr')">Collapse quarters</button>
+        <button type="button" id="detSopFuture" onclick="toggleDetailedSopGroup('future')">Collapse future months</button>
+        <button type="button" id="detSopFYQtr" onclick="setDetailedSopGroup('fyqtr')">Monthly view</button>
+        <span class="hint">Use the ⊖ / ⊕ icon directly on selected headers to collapse or expand one column.</span>
+      </div>
+      <div class="sop-individual-note">Selected headers have a <b>⊖</b> toggle. Click it to collapse the column to a narrow rail; click <b>⊕</b> to expand it again.</div>
+      
+      <div class="card round" style="margin-top:12px">
+        <div class="card-title">Detailed SOP — FY 2026-27 Overall Revenue &amp; Profitability</div>
+        <div class="card-sub">Overall Detailed SOP values from the MIS workbook</div>
+        <div class="chart tall"><canvas id="detailedSopChart"></canvas></div>
+      </div>
+<div class="sop-wrap"><table id="detailedSopTable" class="sop-excel"></table></div>
+      <div class="sop-note">Source: Detailed SOP tab · FY 2025-26 through FY 2026-27 · Apr-26 through Mar-27. Values are presented as reported in the workbook.</div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="variance">
+  <div class="section-title">Variance and Driver Analysis <span>Management interpretation</span></div>
+  <div class="grid g2">
+    <div class="card round">
+      <div class="card-title">CFO insights</div><div class="card-sub">Automatically derived from reported data</div>
+      <div id="driverBullets"></div>
+    </div>
+    <div class="card round"><div class="card-title">Revenue contribution by line</div><div class="card-sub">YTD actuals</div><div class="chart tall"><canvas id="revenueContribution"></canvas></div></div>
+  </div>
+</section>
+
+<section class="section" id="pl">
+  <div class="section-title">Income Statement Analysis (MTD, YTD, FY) <span>Detailed P&L</span></div>
+  <div class="card">
+    <div class="grid g2">
+      <div><div class="card-title">Monthly income statement</div><div class="card-sub">Actual monthly values</div><div style="overflow:auto"><table id="plTable"></table></div></div>
+      <div><div class="card-title">Profit bridge</div><div class="card-sub">YTD revenue to PBT</div><div class="chart tall"><canvas id="profitBridge"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="bs">
+  <div class="section-title">Detailed Balance Sheet Analysis <span id="bsPeriod">Latest reported months</span></div>
+  <div class="card">
+    <div class="grid g4" id="bsKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Assets composition</div><div class="card-sub">Latest reported month</div><div class="chart tall"><canvas id="bsAssets"></canvas></div></div>
+      <div class="card round"><div class="card-title">Liabilities & equity</div><div class="card-sub">Latest reported month</div><div class="chart tall"><canvas id="bsLiabilities"></canvas></div></div>
+    </div>
+    <div class="card round" style="margin-top:12px;overflow:auto"><div class="card-title">Balance Sheet movement</div><div class="card-sub">Reported monthly balances</div><table id="bsTable"></table></div>
+  </div>
+</section>
+
+<section class="section" id="roe">
+  <div class="section-title">Return on Equity Analysis <span>ROE · DuPont</span></div>
+  <div class="grid g3">
+    <div class="placeholder"><div><strong>ROE</strong>Requires net income and average equity.</div></div>
+    <div class="placeholder"><div><strong>ROA / Asset Turnover</strong>Requires balance-sheet assets.</div></div>
+    <div class="placeholder"><div><strong>DuPont Analysis</strong>Margin × asset turnover × equity multiplier will be calculated from BS and P&L data.</div></div>
+  </div>
+</section>
+
+<section class="section" id="cf">
+  <div class="section-title">Detailed Cash Flow Analysis <span>FCF · Working Capital · Capex</span></div>
+  <div class="card">
+    <div class="grid g3" id="cfKpis"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="card round"><div class="card-title">Free cash flow bridge</div><div class="card-sub">Latest reported workbook values</div><div class="chart tall"><canvas id="cfBridge"></canvas></div></div>
+      <div class="card round"><div class="card-title">Cash position</div><div class="card-sub">Balance Sheet cash & bank</div><div class="chart tall"><canvas id="cashTrend"></canvas></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="liquidity">
+  <div class="section-title">Detailed Liquidity Analysis <span>Coverage · Cash · Working Capital</span></div>
+  <div class="grid g3">
+    <div class="placeholder"><div><strong>Debt Service Coverage</strong>Requires debt service and cash-flow data.</div></div>
+    <div class="placeholder"><div><strong>Current / Quick Ratio</strong>Requires current asset and current liability data.</div></div>
+    <div class="placeholder"><div><strong>Liquidity Position</strong>Cash, debt and free-cash-flow trend will appear here.</div></div>
+  </div>
+</section>
+
+<div class="footer">
+  Source: Nymi Inc. Statement of Financial MIS. This dashboard reads <code>data/financials.json</code> at page load.
+  P&L and Summary SOP sections are populated from the workbook-derived JSON. Balance Sheet and Cash Flow are populated where the workbook provides reported values; ROE and Liquidity remain data-required.
+</div>
+</main>
+
+<script>
+let D=null, charts=[];
+
+const EMBEDDED_DATA = {"months":["Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26"],"revenue":{"product":[227642.91,640641.91,919276.5700000001,500048.99,1193974.28,1005309.96],"service":[58687.91,59337.56,142939.84,57648.09,34270.44,163412.61],"subscription":[25911.72,25911.72,30618.39,25397.29,29354.0,24774.66],"total":[312242.54000000004,725891.19,1092834.8,583094.37,1257598.72,1193497.23]},"gm_pct":[0.7462117429210638,0.748110285116676,0.7878727300358358,0.8316634202617723,0.756910509417934,0.7826172616247051],"cogs":[79243.49001250001,182844.52488541667,231820.06264583336,98156.11191041666,305709.0322014583,259445.69610072917],"gross_margin":[232999.0499875,543046.6651145832,861014.7373541667,484938.25808958337,951889.6877985417,934051.5338992708],"sga":[563652.8802466391,631446.7935017279,636389.7497780158,570053.2400973074,675783.9554004648,630850.2287622706],"ebitda":[-330653.8302591391,-88400.12838714465,224624.98757615092,-85114.982007724,276105.7323980769,303201.30513700016],"ebitda_pct":[-1.0589647082013203,-0.12178151437151986,0.2055434065388025,-0.14597119503610367,0.21954994705948566,0.2540444146125083],"pbt":[-564093.3202591392,-322005.13838714466,-72518.19747084293,-315148.262007724,20375.532398076914,48076.949742700184],"finance_charges":[8441.44,8400.48,84269.07999999999,30745.03,30777.22,30013.79],"depreciation":[225000.0,225000.0,225000.0,225000.0,225000.0,225000.0],"other_income_exp":[-1.95,204.53,-12125.894953006133,-25711.75,-47.02,110.5653943],"ytd":{"revenue":5165158.85,"cogs":1157218.9177563542,"gross_margin":4007939.932243645,"gm_pct":0.775956761183375,"sga":3708176.8477864265,"ebitda":299763.08445721865,"ebitda_pct":0.05803559835477638,"finance_charges":192647.03999999998,"depreciation":1350000.0,"other_income_exp":-37571.51955870613,"pbt":-1205312.4359840753,"pbt_pct":-0.23335437902051656},"fy_prior_full":{"revenue":10243607.305482505,"gross_margin":8123275.015482505,"gm_pct":0.7930092176742102,"ebitda":1346002.2814566446,"ebitda_pct":0.131399246507258,"pbt":1459746.0506683523},"sga_breakdown_ytd":{"payroll onsite":1126020.1951071864,"payroll offshore":351183.73,"payroll pss nonbillable":181857.61224364585,"third-party contractors":192920.75,"sales commission & bonus":1365499.7250376104,"travel & entertainment":70975.488350863,"marketing":33030.64,"communication":28229.18003414783,"dues & subscriptions":113639.89471353257,"rent & utilities":13147.61,"professional fees":45257.31351332308,"insurance":46400.06,"other g&a":140014.6487861171},"summary_sop":{"source_sheet":"Summary SOP","title":"Statement of Financials FY 2026-27","entity":"Nymi Inc","headers":["FY 25-26","1Q' 25-26","FY 2026-27","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27","Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26","Oct-26","Nov-26","Dec-26","Jan-27","Feb-27","Mar-27"],"rows":[{"row":2,"sno":"Nymi Inc","particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":3,"sno":"Statement of Financials FY 2026-27","particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":6,"sno":"S No","particulars":"Particulars","values":["FY  25-26","1Q' 25-26","FY 2026-27","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27",46142.0,46173.0,46203.0,46234.0,46265.0,46295.0,46326.0,46356.0,46387.0,46418.0,46446.0,46477.0]},{"row":7,"sno":"I","particulars":"Net Sales & Revenues:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":8,"sno":null,"particulars":"(i) Products:","values":[8271764.97,748571.27,4486894.62,1787561.3900000001,2699333.23,0.0,0.0,227642.91,640641.91,919276.5700000001,500048.99,1193974.28,1005309.96,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":9,"sno":null,"particulars":"COGS - Products:","values":[1931994.5100000002,206370.65000000002,1072725.7,454968.661,617757.039,0.0,0.0,67463.281,169528.53,217976.85000000003,85646.559,296909.79,235200.69,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":10,"sno":null,"particulars":"Gross Profit","values":[6339770.459999999,542200.62,3414168.92,1332592.729,2081576.191,0.0,0.0,160179.62900000002,471113.38,701299.72,414402.431,897064.49,770109.27,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":11,"sno":null,"particulars":"GM %","values":[0.7664350332719861,0.7243139587764301,0.76092023752499,0.7454808189832294,0.7711445803969894,0.0,0.0,0.7036442690000757,0.7353770845244888,0.7628821868047827,0.828723663655435,0.7513264774849253,0.7660416196413692,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":12,"sno":null,"particulars":"(ii) Services:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":13,"sno":null,"particulars":"Revenues:","values":[1346468.965482505,299524.6949174066,516296.44999999995,260965.31,255331.13999999998,0.0,0.0,58687.91,59337.56,142939.84,57648.09,34270.44,163412.61,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":14,"sno":null,"particulars":"COGS - Services:","values":[163346.94,65907.37,65080.53775635416,30248.20654375,34832.331212604164,0.0,0.0,8914.969012500005,10355.244885416665,10977.992645833328,8283.522910416665,5276.762201458332,21272.046100729167,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":15,"sno":null,"particulars":"Gross Margin","values":[1183122.025482505,233617.3249174066,451215.9122436458,230717.10345624998,220498.80878739583,0.0,0.0,49772.9409875,48982.31511458333,131961.84735416668,49364.56708958333,28993.67779854167,142140.5638992708,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":16,"sno":null,"particulars":"GM %","values":[0.8786849573309958,0.7799601464641377,0.8739473460327799,0.884091082666313,0.8635797763931021,0.0,0.0,0.8480953059582458,0.8254858324909776,0.9231985103255095,0.8563088055403628,0.8460258403026535,0.8698261651856048,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":17,"sno":null,"particulars":"(iii) Subscription:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":18,"sno":null,"particulars":"Revenues","values":[625373.37,223762.31,161967.78,82441.83,79525.95,0.0,0.0,25911.72,25911.72,30618.39,25397.29,29354.0,24774.66,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":19,"sno":null,"particulars":"COGS","values":[24990.839999999997,0.0,19412.68,8691.21,10721.470000000001,0.0,0.0,2865.24,2960.75,2865.22,4226.03,3522.48,2972.96,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":20,"sno":null,"particulars":"Gross Margin","values":[600382.53,223762.31,142555.1,73750.62,68804.48,0.0,0.0,23046.480000000003,22950.97,27753.17,21171.260000000002,25831.52,21801.7,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":21,"sno":null,"particulars":"GM %","values":[0.9600385286632849,1.0,0.8801448041085703,0.8945776676718602,0.8651827485242238,0.0,0.0,0.8894230101282355,0.8857370332806931,0.9064215982616982,0.8336031127730558,0.88,0.8799999677089414,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":22,"sno":null,"particulars":"Overall:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":23,"sno":null,"particulars":"Revenues","values":[10243607.305482505,1271858.2749174065,5165158.85,2130968.5300000003,3034190.32,0.0,0.0,312242.54000000004,725891.19,1092834.8,583094.37,1257598.72,1193497.23,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":24,"sno":null,"particulars":"COGS","values":[2120332.29,272278.02,1157218.9177563542,493908.07754375006,663310.8402126041,0.0,0.0,79243.49001250001,182844.52488541667,231820.06264583336,98156.11191041666,305709.0322014583,259445.69610072917,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":25,"sno":null,"particulars":"Gross Margin","values":[8123275.015482505,999580.2549174065,4007939.932243645,1637060.4524562503,2370879.479787396,0.0,0.0,232999.0499875,543046.6651145832,861014.7373541667,484938.25808958337,951889.6877985417,934051.5338992708,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":26,"sno":null,"particulars":"GM %","values":[0.7930092176742102,0.7859211003539828,0.775956761183375,0.7682236642210057,0.7813878596077638,0.0,0.0,0.7462117429210638,0.748110285116676,0.7878727300358358,0.8316634202617723,0.756910509417934,0.7826172616247051,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":28,"sno":"III","particulars":"S&GA Expenses:","values":[6777272.73402586,1784639.5622562845,3708176.8477864265,1831489.423526383,1876687.4242600433,0.0,0.0,563652.8802466391,631446.7935017279,636389.7497780158,570053.2400973074,675783.9554004648,630850.2287622706,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":31,"sno":null,"particulars":"EBITDA","values":[1346002.2814566446,-785059.307338878,299763.08445721865,-194428.97107013268,494192.0555273525,0.0,0.0,-330653.8302591391,-88400.12838714465,224624.98757615092,-85114.982007724,276105.7323980769,303201.30513700016,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":32,"sno":null,"particulars":"EBITDA %","values":[0.131399246507258,-0.6172537638990155,0.05803559835477638,-0.09123971956081992,0.16287444207763227,0.0,0.0,-1.0589647082013203,-0.12178151437151986,0.2055434065388025,-0.14597119503610367,0.21954994705948566,0.2540444146125083,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":33,"sno":"IV","particulars":"Finance Charges","values":[103307.83,21570.34,192647.03999999998,101110.99999999999,91536.04000000001,0.0,0.0,8441.44,8400.48,84269.07999999999,30745.03,30777.22,30013.79,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":34,"sno":"V","particulars":"Depreciation & Amortization Expenses","values":[0.0,0.0,1350000.0,675000.0,675000.0,0.0,0.0,225000.0,225000.0,225000.0,225000.0,225000.0,225000.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":35,"sno":"VI","particulars":"Other (Income) / Expenses","values":[-217051.59921170762,-29749.119999999995,-37571.51955870613,-11923.314953006133,-25648.2046057,0.0,0.0,-1.95,204.53,-12125.894953006133,-25711.75,-47.02,110.5653943,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":36,"sno":null,"particulars":"Profit Before Tax ","values":[1459746.0506683523,-776880.527338878,-1205312.4359840753,-958616.6561171266,-246695.77986694753,0.0,0.0,-564093.3202591392,-322005.13838714466,-72518.19747084293,-315148.262007724,20375.532398076914,48076.949742700184,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":37,"sno":null,"particulars":"PBT %","values":[0.14250312484031658,-0.6108231889196365,-0.23335437902051656,-0.4498502172235863,-0.08130530845110188,0.0,0.0,-1.8065870212916508,-0.4435997334354543,-0.06635787721148972,-0.5404755700311838,0.01620193474598711,0.04028241418096981,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":38,"sno":"VII","particulars":"Tax Expense","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,null,null,null,null,null,null,null,null,null,null,null]},{"row":39,"sno":null,"particulars":"Profit After Tax ","values":[1459746.0506683523,-776880.527338878,-1205312.4359840753,-958616.6561171266,-246695.77986694753,0.0,0.0,-564093.3202591392,-322005.13838714466,-72518.19747084293,-315148.262007724,20375.532398076914,48076.949742700184,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":40,"sno":null,"particulars":"PAT %","values":[0.14250312484031658,-0.6108231889196365,-0.23335437902051656,-0.4498502172235863,-0.08130530845110188,0.0,0.0,-1.8065870212916508,-0.4435997334354543,-0.06635787721148972,-0.5404755700311838,0.01620193474598711,0.04028241418096981,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":44,"sno":null,"particulars":"Ctrl Chk","values":[null,null,0.0,0.0,5.820766091346741e-10,0.0,0.0,null,null,null,null,null,null,null,null,null,null,null,null]}]},"balance_sheet":{"source_sheet":"Balance sheet","months":["Jul-26","Aug-26"],"ppe":[2331896.0,2347664.0],"trade_receivables":[2144849.0,2335712.0],"inventory":[768980.0,548050.0],"cash":[345670.0,393930.0],"other_assets":[8816338.0,9670783.0],"total_assets":[14407733.0,15296139.0],"shareholders_fund":[-13531067.0,-13531067.0],"debts":[2664405.0,2781915.0],"trade_payables":[2456792.0,2538750.0],"deferred_revenue":[3187640.0,3308681.0],"other_liabilities":[19629963.0,20197860.0],"total_equity_liability":[14407733.0,15296139.0]},"cash_flow":{"change_wc":-112025.0,"change_capex":240768.0,"fcf":373143.40282510594,"source_sheet":"Balance sheet"},"detailed_sop":{"source_sheet":"Detailed SOP","title":"Statement of Financials FY 2026-27","entity":"Nymi Inc","headers":["FY 25-26","1Q' 25-26","FY 2026-27","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27","Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26","Oct-26","Nov-26","Dec-26","Jan-27","Feb-27","Mar-27"],"rows":[{"row":2,"sno":"Nymi Inc","particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":3,"sno":"Statement of Financials FY 2026-27","particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":5,"sno":".","particulars":"Particulars","values":["FY 25-26","Q1 25-26","FY 2026-27","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27",46142.0,46173.0,46203.0,46234.0,46265.0,46295.0,46326.0,46356.0,46387.0,46418.0,46446.0,46477.0]},{"row":6,"sno":null,"particulars":"Net Sales & Revenues:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":7,"sno":null,"particulars":"(i) Products:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":8,"sno":null,"particulars":"Revenues:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":9,"sno":null,"particulars":"Perpetual Sale","values":[5566497.43,207164.4,3021795.3400000003,1099356.1400000001,1922439.2000000002,0.0,0.0,125515.74,437922.0,535918.4,284262.0,787336.62,850840.58,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":10,"sno":null,"particulars":"3rd Party License - Evidian","values":[94286.63999999998,0.0,224731.18,82280.95000000001,142450.22999999998,0.0,0.0,11186.65,45577.65,25516.65,47307.979999999996,87850.89,7291.36,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":11,"sno":null,"particulars":"Maintenance & Support - 3rd Party License","values":[91081.61000000002,2649.2200000000003,86264.93,40526.82,45738.11,0.0,0.0,12748.56,13570.19,14208.07,14668.19,15060.62,16009.3,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":12,"sno":null,"particulars":"Maintenance & Support - Band","values":[1644025.75,372901.65,529396.34,259617.62999999998,269778.71,0.0,0.0,75568.20999999999,77685.81999999999,106363.6,84062.07,92611.53,93105.11,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":13,"sno":null,"particulars":"Peripheral (BLE & PH's)","values":[790512.78,158920.0,595065.6299999999,289970.05,305095.57999999996,0.0,0.0,1363.75,60144.25,228462.05,68563.75,200418.22,36113.61,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":14,"sno":null,"particulars":"Shipping Income","values":[85360.76000000001,6936.0,29641.199999999997,15809.8,13831.4,0.0,0.0,1260.0,5742.0,8807.8,1185.0,10696.4,1950.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":16,"sno":null,"particulars":"Sub-Total - Product Revenues","values":[8271764.97,748571.27,4486894.62,1787561.3900000001,2699333.23,0.0,0.0,227642.91,640641.91,919276.5700000001,500048.99,1193974.28,1005309.96,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":17,"sno":null,"particulars":"COGS - Products:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":18,"sno":null,"particulars":"COGS - Perpetual Sale","values":[1240973.77,69254.46,741909.5,296750.16000000003,445159.33999999997,0.0,0.0,55667.65,111974.55,129107.96,33194.75,196134.69,215829.9,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":19,"sno":null,"particulars":"COGS - 3rd Party License - Evidian","values":[536171.3200000001,77872.73000000001,236423.08000000002,110850.41100000001,125572.669,0.0,0.0,9413.841000000004,39597.130000000005,61839.44,43383.318999999996,65397.979999999996,16791.37,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":20,"sno":null,"particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":21,"sno":null,"particulars":"COGS - Peripheral (BLE & PH's)","values":[154849.42,59243.46,94393.12,47368.09,47025.02999999999,0.0,0.0,2381.79,17956.85,27029.45,9068.49,35377.119999999995,2579.42,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":23,"sno":null,"particulars":"Sub-Total - COGS - Products","values":[1931994.51,206370.65,1072725.7000000002,454968.6610000001,617757.039,0.0,0.0,67463.281,169528.53,217976.85000000003,85646.559,296909.79,235200.69,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":24,"sno":null,"particulars":"Gross Profit","values":[6339770.46,542200.62,3414168.92,1332592.729,2081576.191,0.0,0.0,160179.62900000002,471113.38,701299.72,414402.431,897064.49,770109.27,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":25,"sno":null,"particulars":"GP %","values":[0.7664350332719863,0.7243139587764301,0.76092023752499,0.7454808189832294,0.7711445803969894,0.0,0.0,0.7036442690000757,0.7353770845244888,0.7628821868047827,0.828723663655435,0.7513264774849253,0.7660416196413692,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":26,"sno":null,"particulars":"(ii) Services:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":27,"sno":null,"particulars":"Revenues:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":28,"sno":null,"particulars":"Revenues - Professional Services","values":[1346468.965482505,299524.6949174066,516296.44999999995,260965.31,255331.13999999998,0.0,0.0,58687.91,59337.56,142939.84,57648.09,34270.44,163412.61,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":29,"sno":null,"particulars":"Sub-Total - Service Revenue","values":[1346468.965482505,299524.6949174066,516296.44999999995,260965.31,255331.13999999998,0.0,0.0,58687.91,59337.56,142939.84,57648.09,34270.44,163412.61,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":30,"sno":null,"particulars":"COGS - Services:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":31,"sno":null,"particulars":"COGS - Professional Services","values":[163346.94,65907.37,65080.53775635416,30248.20654375,34832.331212604164,0.0,0.0,8914.969012500005,10355.244885416665,10977.992645833328,8283.522910416665,5276.762201458332,21272.046100729167,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":32,"sno":null,"particulars":"Sub-Total - COGS - Services","values":[163346.94,65907.37,65080.53775635416,30248.20654375,34832.331212604164,0.0,0.0,8914.969012500005,10355.244885416665,10977.992645833328,8283.522910416665,5276.762201458332,21272.046100729167,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":33,"sno":null,"particulars":"Gross Margin","values":[1183122.025482505,233617.3249174066,451215.9122436458,230717.10345624998,220498.80878739583,0.0,0.0,49772.9409875,48982.31511458333,131961.84735416668,49364.56708958333,28993.67779854167,142140.5638992708,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":34,"sno":null,"particulars":"GM %","values":[0.8786849573309958,0.7799601464641377,0.8739473460327799,0.884091082666313,0.8635797763931021,0.0,0.0,0.8480953059582458,0.8254858324909776,0.9231985103255095,0.8563088055403628,0.8460258403026535,0.8698261651856048,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":35,"sno":null,"particulars":"(iii) Subscription:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":36,"sno":null,"particulars":"Revenues - Subscription","values":[625373.37,223762.31,161967.78,82441.83,79525.95,0.0,0.0,25911.72,25911.72,30618.39,25397.29,29354.0,24774.66,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":37,"sno":null,"particulars":"Sub-Total - Subscription Revenue","values":[625373.37,223762.31,161967.78,82441.83,79525.95,0.0,0.0,25911.72,25911.72,30618.39,25397.29,29354.0,24774.66,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":38,"sno":null,"particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":39,"sno":null,"particulars":"COGS - Subscription","values":[24990.839999999997,0.0,19412.68,8691.21,10721.470000000001,0.0,0.0,2865.24,2960.75,2865.22,4226.03,3522.48,2972.96,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":40,"sno":null,"particulars":"Sub-Total - COGS - Subscription","values":[24990.839999999997,0.0,19412.68,8691.21,10721.470000000001,0.0,0.0,2865.24,2960.75,2865.22,4226.03,3522.48,2972.96,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":41,"sno":null,"particulars":"Gross Margin","values":[600382.53,223762.31,142555.1,73750.62,68804.48,0.0,0.0,23046.480000000003,22950.97,27753.17,21171.260000000002,25831.52,21801.7,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":42,"sno":null,"particulars":"GM %","values":[0.9600385286632849,1.0,0.8801448041085703,0.8945776676718602,0.8651827485242238,0.0,0.0,0.8894230101282355,0.8857370332806931,0.9064215982616982,0.8336031127730558,0.88,0.8799999677089414,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":43,"sno":null,"particulars":"Overall:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":44,"sno":null,"particulars":"Revenues","values":[10243607.305482505,1271858.2749174067,5165158.850000001,2130968.5300000003,3034190.3200000003,0.0,0.0,312242.54000000004,725891.19,1092834.8,583094.37,1257598.72,1193497.23,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":45,"sno":null,"particulars":"COGS","values":[2120332.29,272278.02,1157218.9177563542,493908.0775437501,663310.8402126041,0.0,0.0,79243.49001250001,182844.52488541667,231820.06264583336,98156.11191041666,305709.0322014583,259445.69610072917,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":46,"sno":null,"particulars":"Gross Margin","values":[8123275.015482505,999580.2549174067,4007939.932243646,1637060.45245625,2370879.4797873963,0.0,0.0,232999.0499875,543046.6651145832,861014.7373541667,484938.25808958337,951889.6877985417,934051.5338992708,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":47,"sno":null,"particulars":"GM %","values":[0.7930092176742102,0.7859211003539829,0.775956761183375,0.7682236642210056,0.7813878596077638,0.0,0.0,0.7462117429210638,0.748110285116676,0.7878727300358358,0.8316634202617723,0.756910509417934,0.7826172616247051,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":48,"sno":null,"particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":49,"sno":null,"particulars":"S&GA Expenses:","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":50,"sno":null,"particulars":"Payroll & Benefits - Onsite","values":[2088932.5759952348,539751.7682626112,1126020.1951071864,545610.7271259312,580409.4679812553,0.0,0.0,194700.22593596758,174147.22777023126,176763.27341973234,197606.3843711493,195140.811822306,187662.27178779998,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":51,"sno":null,"particulars":"Payroll & Benefits - Offshore","values":[824588.88,208311.84,351183.73,180975.97,170207.76,0.0,0.0,59633.26,63000.05,58342.66,57381.979999999996,57860.83,54964.95,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":52,"sno":null,"particulars":"Payroll PSS Balance Non Billable","values":[824588.88,208311.84,181857.61224364585,95786.12345625,86071.48878739585,null,null,33613.420987499994,32645.605114583333,29527.097354166668,32479.807089583337,35727.78779854167,17863.893899270835,null,null,null,null,null,null]},{"row":53,"sno":null,"particulars":"Third Party Contractors","values":[641238.8921562778,101317.42,192920.75,104535.73999999999,88385.01,0.0,0.0,35242.35,40797.61,28495.78,21463.39,30940.35,35981.27,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":54,"sno":null,"particulars":"Sales commission & Bonus","values":[2127123.9743539775,533961.0578745448,1365499.7250376104,627038.4198127838,738461.3052248266,0.0,0.0,152193.50918800692,220872.28184524697,253972.62877952988,196299.93427439517,275069.3064004314,267092.06455,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":55,"sno":null,"particulars":"Travel & Entertainment","values":[105200.00022091436,49029.648788193575,70975.488350863,40716.561626123,30258.926724740002,0.0,0.0,8803.421388737179,23226.06126079083,8687.078976594994,5036.111148694908,18463.165278645094,6759.6502974,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":56,"sno":null,"particulars":"Marketing, Campaign & Events","values":[93285.19813705601,44885.768137056,33030.64,23702.149999999998,9328.49,0.0,0.0,15892.279999999999,198.0,7611.87,3130.47,4242.57,1955.45,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":57,"sno":null,"particulars":"Communication","values":[52378.37136955789,13211.22283910519,28229.18003414783,15320.291941424162,12908.888092723666,0.0,0.0,4911.901640996092,5315.8942531322355,5092.496047295835,4030.404652150022,4560.077954773644,4318.4054858,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":58,"sno":null,"particulars":"Dues & Subscriptions","values":[186923.40929808313,36387.50164357522,113639.89471353257,58904.33444858776,54735.56026494481,0.0,0.0,22339.125842965444,18309.355798666682,18255.852806955634,16452.514745016233,17943.881695928572,20339.163824,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":59,"sno":null,"particulars":"Rent & Utilities","values":[105512.46,25957.94,13147.61,6617.25,6530.360000000001,0.0,0.0,2090.64,1888.16,2638.45,2468.84,2233.44,1828.0800000000002,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":60,"sno":null,"particulars":"Professional Fee","values":[94406.24755850961,35562.99719252995,45257.31351332308,23925.974123469212,21331.339389853867,0.0,0.0,11891.37443816526,7202.717002159847,4831.882683144106,7141.199492170074,7787.981396783793,6402.1585009,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":61,"sno":null,"particulars":"Insurance","values":[113742.31999999999,24156.4,46400.06,20976.420000000002,25423.64,0.0,0.0,6629.14,6942.49,7404.79,7251.95,10457.25,7714.44,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":62,"sno":null,"particulars":"Other Expenses - GA","values":[343940.40493624925,172105.997518669,140014.6487861171,87379.46099181386,52635.187794303245,0.0,0.0,15712.230824300716,36901.34045691677,34765.889710596384,19310.25432414842,15356.503053054832,17968.4304171,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":63,"sno":null,"particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":64,"sno":null,"particulars":"Total - SG&A Expenses","values":[6777272.73402586,1784639.5622562845,3708176.8477864265,1831489.423526383,1876687.4242600433,0.0,0.0,563652.8802466391,631446.7935017279,636389.7497780158,570053.2400973074,675783.9554004648,630850.2287622706,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":65,"sno":null,"particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":66,"sno":null,"particulars":"EBITDA","values":[1346002.2814566446,-785059.3073388778,299763.0844572196,-194428.97107013292,494192.05552735296,0.0,0.0,-330653.8302591391,-88400.12838714465,224624.98757615092,-85114.982007724,276105.7323980769,303201.30513700016,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":67,"sno":null,"particulars":"EBITDA %","values":[0.131399246507258,-0.6172537638990152,0.05803559835477655,-0.09123971956082003,0.1628744420776324,0.0,0.0,-1.0589647082013203,-0.12178151437151986,0.2055434065388025,-0.14597119503610367,0.21954994705948566,0.2540444146125083,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":68,"sno":null,"particulars":"Finance Charges","values":[103307.83,21570.34,192647.03999999998,101110.99999999999,91536.04000000001,0.0,0.0,8441.44,8400.48,84269.07999999999,30745.03,30777.22,30013.79,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":69,"sno":null,"particulars":"Depreciation & Amortization Expenses","values":[0.0,0.0,1350000.0,675000.0,675000.0,0.0,0.0,225000.0,225000.0,225000.0,225000.0,225000.0,225000.0,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":70,"sno":null,"particulars":"Other (Income) / Expenses","values":[-217051.59921170762,-29749.119999999995,-37571.51955870613,-11923.314953006133,-25648.2046057,0.0,0.0,-1.95,204.53,-12125.894953006133,-25711.75,-47.02,110.5653943,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":71,"sno":null,"particulars":"Profit Before Tax ","values":[1459746.0506683523,-776880.5273388778,-1205312.4359840744,-958616.6561171268,-246695.77986694706,0.0,0.0,-564093.3202591392,-322005.13838714466,-72518.19747084293,-315148.262007724,20375.532398076914,48076.949742700184,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":72,"sno":null,"particulars":"PBT %","values":[0.14250312484031658,-0.6108231889196363,-0.23335437902051634,-0.4498502172235864,-0.08130530845110172,0.0,0.0,-1.8065870212916508,-0.4435997334354543,-0.06635787721148972,-0.5404755700311838,0.01620193474598711,0.04028241418096981,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":73,"sno":null,"particulars":"Tax Expense","values":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,null,null,null,null,0.0,null,null,null,null,null,null,null]},{"row":74,"sno":null,"particulars":"Profit After Tax ","values":[1459746.0506683523,-776880.5273388778,-1205312.4359840744,-958616.6561171268,-246695.77986694706,0.0,0.0,-564093.3202591392,-322005.13838714466,-72518.19747084293,-315148.262007724,20375.532398076914,48076.949742700184,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":75,"sno":null,"particulars":"PAT %","values":[0.14250312484031658,-0.6108231889196363,-0.23335437902051634,-0.4498502172235864,-0.08130530845110172,0.0,0.0,-1.8065870212916508,-0.4435997334354543,-0.06635787721148972,-0.5404755700311838,0.01620193474598711,0.04028241418096981,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":77,"sno":null,"particulars":"","values":[null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null]},{"row":79,"sno":null,"particulars":"Ctrl Chk","values":[null,null,0.0,0.0,0.0,0.0,null,789093.3202591392,547005.1383871447,297518.1974708429,540148.262007724,"0xf",-48076.949742700184,0.0,0.0,0.0,0.0,0.0,0.0]},{"row":81,"sno":null,"particulars":"","values":[null,null,null,null,null,null,"Total Payroll Cost",null,null,null,null,null,null,null,null,null,null,null,null]},{"row":82,"sno":null,"particulars":"","values":[null,null,null,null,null,null,"Payroll Expense",null,null,null,null,null,null,null,null,null,null,null,null]},{"row":83,"sno":null,"particulars":"","values":[null,null,null,null,null,null,"Capitalization-Onshore",null,null,null,null,null,null,null,null,null,null,null,null]},{"row":84,"sno":null,"particulars":"","values":[null,null,null,null,null,null,"Capitalization-Offshore",null,null,null,null,null,null,null,null,null,null,null,null]},{"row":85,"sno":null,"particulars":"","values":[null,null,null,null,null,null,"Total Capitalization",null,null,null,null,null,null,null,null,null,null,null,null]}]},"source_workbook":"Statement Of Financial MIS Sept'26 Corp.xlsb","generated_at":"2026-10-07T12:19:14","balance_sheet_source":"Previous dashboard snapshot — no Balance sheet worksheet in Sept'26 workbook","cash_flow_source":"Previous dashboard snapshot — no Cash Flow worksheet in Sept'26 workbook"};const C={navy:'#092B52',blue:'#1F6FEB',orange:'#E58A2B',green:'#1E7145',red:'#AE3A2E',muted:'#657383',line:'#D8E0E8'};
+
+function fmt(v){const a=Math.abs(v);if(a>=1e6)return(v/1e6).toFixed(2)+'M';if(a>=1e3)return(v/1e3).toFixed(0)+'K';return v.toFixed(0)}
+function usd(v){return(v<0?'-$':'$')+fmt(Math.abs(v))}
+function pct(v){return(v*100).toFixed(1)+'%'}
+function lastIdx(a){for(let i=a.length-1;i>=0;i--)if(a[i]!==0)return i;return a.length-1}
+
+async function loadData(){
+  /*
+    GitHub Pages safe data loading.
+
+    IMPORTANT:
+    - EMBEDDED_DATA is the guaranteed fallback and is available immediately.
+    - We never throw an exception because financials.json is missing, blocked,
+      malformed, or has an older schema.
+    - If data/financials.json is available and has the expected structure,
+      it replaces the embedded snapshot.
+  */
+  D = EMBEDDED_DATA;
+  const status = document.getElementById('asof');
+  if(status) status.textContent='EMBEDDED MIS SNAPSHOT · PROVISIONAL';
+
+  const base = document.baseURI || window.location.href;
+  const urls = [];
+  try{
+    urls.push(new URL('./data/financials.json',base).href);
+    urls.push(new URL('./financials.json',base).href);
+  }catch(e){
+    console.warn('Could not construct JSON URLs; using embedded data.',e);
+    return;
+  }
+
+  for(const u of urls){
+    try{
+      const r=await fetch(u+'?v='+Date.now(),{
+        cache:'no-store',
+        headers:{'Accept':'application/json'}
+      });
+      if(!r.ok) continue;
+
+      const candidate=await r.json();
+
+      // Accept the live JSON only when it contains the structures required
+      // by this dashboard. This avoids replacing good embedded data with
+      // an incompatible/older JSON file.
+      const valid =
+        candidate &&
+        typeof candidate === 'object' &&
+        candidate.revenue &&
+        candidate.revenue.total &&
+        candidate.ytd &&
+        candidate.ytd.revenue != null &&
+        candidate.ytd.ebitda != null &&
+        candidate.ytd.pbt != null &&
+        candidate.summary_sop &&
+        candidate.detailed_sop;
+
+      if(valid){
+        D=candidate;
+        if(status) status.textContent='LIVE JSON DATA';
+        return;
+      }
+    }catch(e){
+      console.warn('JSON unavailable:',u,e);
+    }
+  }
+
+  // Deliberately do not throw. The dashboard can operate from EMBEDDED_DATA.
+  console.warn('financials.json unavailable or incompatible; using embedded MIS snapshot.');
+}
+
+function commonOptions(){
+ return {responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',align:'end',labels:{boxWidth:10,font:{size:10}}}},scales:{x:{grid:{display:false}},y:{grid:{color:C.line},ticks:{callback:v=>usd(v)}}}};
+}
+function make(id,type,data,options={}){
+  const el=document.getElementById(id); if(!el)return;
+  const ch=new Chart(el,{type,data,options});charts.push(ch);return ch;
+}
+
+function renderBalanceSheet(){
+  const B=D.balance_sheet||{}; const months=B.months||[]; const n=months.length; if(!n)return;
+  const i=n-1, m=months[i];
+  const get=k=>(B[k]||[])[i]||0;
+  const currentAssets=get('trade_receivables')+get('inventory')+get('cash')+get('other_assets');
+  const currentLiab=get('trade_payables')+get('deferred_revenue')+get('other_liabilities');
+  const wc=currentAssets-currentLiab;
+  const ratio=currentLiab?currentAssets/currentLiab:0;
+  document.getElementById('bsPeriod').textContent=m+' latest reported';
+  const cards=[['Total Assets',usd(get('total_assets')),''],['Cash & Bank',usd(get('cash')),''],['Working Capital',usd(wc),''],['Current Ratio',ratio.toFixed(2)+'x','']];
+  document.getElementById('bsKpis').innerHTML=cards.map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  make('bsAssets','bar',{labels:['PP&E','Receivables','Inventory','Cash','Other assets'],datasets:[{label:m,data:[get('ppe'),get('trade_receivables'),get('inventory'),get('cash'),get('other_assets')],backgroundColor:[C.navy,C.blue,C.orange,C.green,'#9CC0FA']}]},{...commonOptions(),plugins:{legend:{display:false}}});
+  make('bsLiabilities','bar',{labels:["Shareholder's Fund",'Debt','Payables','Deferred revenue','Other liabilities'],datasets:[{label:m,data:[get('shareholders_fund'),get('debts'),get('trade_payables'),get('deferred_revenue'),get('other_liabilities')],backgroundColor:[C.navy,C.orange,C.blue,'#9CC0FA',C.green]}]},{...commonOptions(),plugins:{legend:{display:false}}});
+  const fields=[['Total Assets','total_assets'],['PP&E','ppe'],['Trade Receivables','trade_receivables'],['Inventory','inventory'],['Cash & Bank','cash'],['Other Assets','other_assets'],["Shareholder's Fund",'shareholders_fund'],['Debts','debts'],['Trade Payables','trade_payables'],['Deferred Revenue','deferred_revenue'],['Other Liabilities','other_liabilities'],['Total Eq. & Liability','total_equity_liability']];
+  let t='<thead><tr><th>Particulars</th>'+months.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
+  fields.forEach(([label,key])=>{t+=`<tr class="${key==='total_assets'||key==='total_equity_liability'?'total':''}"><td>${label}</td>`;(B[key]||[]).forEach(v=>t+=`<td class="${v<0?'neg':''}">${usd(v)}</td>`);t+='</tr>'}); t+='</tbody>'; document.getElementById('bsTable').innerHTML=t;
+}
+function renderCashFlow(){
+  const F=D.cash_flow||{}; const B=D.balance_sheet||{}; const months=B.months||[]; const cash=B.cash||[];
+  document.getElementById('cfKpis').innerHTML=[['Free Cash Flow',usd(F.fcf||0),'Latest workbook value','green'],['Change in Working Capital',usd(F.change_wc||0),'Latest workbook value',(F.change_wc||0)<0?'red':'green'],['Change in Capex',usd(F.change_capex||0),'Latest workbook value',(F.change_capex||0)>0?'red':'green']].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  const base=F.fcf||0, wc=F.change_wc||0, cap=F.change_capex||0;
+  make('cfBridge','bar',{labels:['Change in WC','Change in Capex','Free Cash Flow'],datasets:[{label:'USD',data:[wc,cap,base],backgroundColor:[wc<0?C.red:C.green,cap>0?C.red:C.green,C.navy]}]}, {...commonOptions(),plugins:{legend:{display:false}}});
+  if(months.length) make('cashTrend','line',{labels:months,datasets:[{label:'Cash & Bank',data:cash,borderColor:C.green,backgroundColor:C.green,tension:.25}]},commonOptions());
+}
+
+function renderSummarySOP(){
+  const S=D.summary_sop;
+  if(!S || !Array.isArray(S.rows) || !S.rows.length) return;
+  const rows=S.rows;
+  const h=["FY 25-26","1Q' 25-26","FY 2026-27","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27",
+           "Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26","Oct-26","Nov-26","Dec-26","Jan-27","Feb-27","Mar-27"];
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const fmtSop=(v,isPct)=>{
+    if(v===null || v===undefined || v==='') return '—';
+    const n=Number(v); if(!Number.isFinite(n)) return esc(v);
+    if(isPct) return (n*100).toFixed(0)+'%';
+    return '$'+Math.round(n).toLocaleString('en-US');
+  };
+  let t='<thead><tr class="bms-row"><th colspan="2"></th><th></th><th></th><th class="bms">Including BMS</th><th></th><th></th><th class="bms">Including BMS</th><th colspan="4"></th><th class="bms">Including BMS</th><th colspan="7"></th></tr>';
+  const individualCols=new Set([1,5,6,12,13,14,15,16,17,18]);
+  t+='<tr><th>S No</th><th class="left">Particulars</th>'+h.map((x,i)=>`<th data-sop-col="${i}" class="sop-col-${i}">${individualCols.has(i)?`<span class="sop-head-label">${esc(x)}</span><button type="button" class="sop-col-toggle" aria-label="Collapse or expand ${esc(x)}" title="Collapse/expand ${esc(x)}" onclick="event.stopPropagation();toggleSopColumn(${i})"><span class="toggle-icon">⊖</span></button>`:esc(x)}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach(r=>{
+    const p=String(r.particulars??'').trim(), sno=String(r.sno??'').trim(), vals=Array.isArray(r.values)?r.values:[];
+    const isSection=/^(Net Sales & Revenues:|Overall:|S&GA Expenses:)$/.test(p);
+    const lower=p.toLowerCase();
+    const isPct=['gm %','ebitda %','pbt %','pat %'].includes(lower);
+    const isTotal=['gross profit','gross margin','ebitda','profit before tax','profit after tax'].includes(lower);
+    const cls=[isSection?'section-row':'',isTotal?'total-row':'',isPct?'pct-row':''].filter(Boolean).join(' ');
+    t+=`<tr class="${cls}"><td class="sno">${esc(sno)}</td><td class="part">${esc(p)}</td>`;
+    for(let i=0;i<19;i++){const v=vals[i], neg=typeof v==='number'&&v<0, future=i>=11&&(v===0||v===null||v===undefined); t+=`<td data-sop-col="${i}" class="sop-col-${i} ${neg?'neg ':''}${future?'future':''}">${fmtSop(v,isPct)}</td>`;}
+    t+='</tr>';
+  });
+  t+='</tbody>'; document.getElementById('sopTable').innerHTML=t;
+
+  // Summary SOP contains repeated labels (e.g. "Revenues" and "Gross Margin").
+  // Use the workbook row numbers / section context so the KPI cards always use
+  // the Overall section, while the donut uses the three business-line revenue rows.
+  const row = n => rows.find(r => Number(r.row) === n);
+  const v = n => row(n)?.values || [];
+
+  // Workbook row map:
+  // 8 Products revenue; 13 Services revenue; 18 Subscription revenue;
+  // 23 Overall revenue; 25 Overall gross margin; 31 EBITDA; 36 PBT.
+  const prodFy = Number(v(8)[2] || 0);
+  const servFy = Number(v(13)[2] || 0);
+  const subFy  = Number(v(18)[2] || 0);
+
+  const fyRev = Number(v(23)[2] || 0);
+  const fyGm  = Number(v(25)[2] || 0);
+  const fyEb  = Number(v(31)[2] || 0);
+  const fyPbt = Number(v(36)[2] || 0);
+
+  const fyGmPct = fyRev ? fyGm / fyRev : 0;
+  const fyEbPct = fyRev ? fyEb / fyRev : 0;
+  const fyPbtPct = fyRev ? fyPbt / fyRev : 0;
+
+  document.getElementById('sopKpis').innerHTML=[
+    ['FY 2026-27 Revenue — Overall',usd(fyRev),'Overall · Summary SOP',''],
+    ['Gross Margin — Overall',usd(fyGm),pct(fyGmPct)+' margin','green'],
+    ['EBITDA — Overall',usd(fyEb),pct(fyEbPct)+' margin',fyEb>=0?'green':'red'],
+    ['Profit Before Tax — Overall',usd(fyPbt),pct(fyPbtPct)+' margin',fyPbt>=0?'green':'red']
+  ].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+
+  // Donut: business-line revenues add to the Overall FY 2026-27 revenue.
+  make('sopRevenueMix','doughnut',{
+    labels:['Products','Services','Subscription'],
+    datasets:[{
+      data:[prodFy,servFy,subFy],
+      backgroundColor:[C.navy,C.orange,'#9CC0FA'],
+      borderWidth:3,borderColor:'#fff'
+    }]
+  },{
+    responsive:true,
+    maintainAspectRatio:false,
+    cutout:'58%',
+    plugins:{
+      legend:{position:'bottom'},
+      tooltip:{callbacks:{
+        label:c=>` ${c.label}: ${usd(c.parsed)} (${fyRev?(c.parsed/fyRev*100).toFixed(1):0}%)`
+      }}
+    }
+  });
+
+  const center = document.getElementById('sopDonutCenter');
+  if(center){
+    center.querySelector('.sop-donut-total').textContent = usd(fyRev);
+    center.querySelector('.sop-donut-label').textContent = 'Total revenue';
+  }
+
+  make('sopProfitability','bar',{
+    labels:['Revenue','Gross Margin','EBITDA','PBT'],
+    datasets:[{
+      label:'FY 2026-27 Overall',
+      data:[fyRev,fyGm,fyEb,fyPbt],
+      backgroundColor:[C.blue,C.green,fyEb>=0?C.green:C.red,fyPbt>=0?C.green:C.red]
+    }]
+  },{...commonOptions(),plugins:{legend:{display:false}}});
+}
+
+function renderDetailedSOP(){
+  const S=D.detailed_sop;
+  const el=document.getElementById('detailedSopTable');
+  if(!el || !S || !Array.isArray(S.rows) || !S.rows.length) return;
+  const rows=S.rows;
+  const h=S.headers;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const fmtSop=(v,isPct)=>{ if(v===null||v===undefined||v==='') return '—'; const n=Number(v); if(!Number.isFinite(n)) return esc(v); if(isPct) return (n*100).toFixed(0)+'%'; return '$'+Math.round(n).toLocaleString('en-US'); };
+  let t='<thead><tr class="bms-row"><th colspan="2"></th><th class="bms">Including BMS</th><th colspan="3"></th><th class="bms">Including BMS</th><th colspan="4"></th><th class="bms">Including BMS</th><th colspan="7"></th></tr>';
+  const individualCols=new Set([1,5,6,12,13,14,15,16,17,18]);
+  t+='<tr><th>S No</th><th class="left">Particulars</th>'+h.map((x,i)=>`<th data-dsop-col="${i}" class="sop-col-${i}">${individualCols.has(i)?`<span class="sop-head-label">${esc(x)}</span><button type="button" class="sop-col-toggle" aria-label="Collapse or expand ${esc(x)}" title="Collapse/expand ${esc(x)}" onclick="event.stopPropagation();toggleDetailedSopColumn(${i})"><span class="toggle-icon">⊖</span></button>`:esc(x)}</th>`).join('')+'</tr></thead><tbody>';
+  rows.forEach(r=>{
+    const p=String(r.particulars??'').trim(), sno=String(r.sno??'').trim(), vals=Array.isArray(r.values)?r.values:[];
+    const lower=p.toLowerCase();
+    const isSection=/^(Net Sales & Revenues:|Overall:|S&GA Expenses:|\(i\) Products:|\(ii\) Services:|\(iii\) Subscription:|Revenues:|COGS - Products:|COGS - Services:)$/.test(p);
+    const isPct=['gp %','gm %','ebitda %','pbt %','pat %'].includes(lower);
+    const isTotal=['sub-total - product revenues','sub-total - cogs - products','gross profit','sub-total - service revenue','sub-total - cogs - services','gross margin','sub-total - subscription revenue','sub-total - cogs - subscription','ebitda','profit before tax','profit after tax','total - sg&a expenses'].includes(lower);
+    const cls=[isSection?'section-row':'',isTotal?'total-row':'',isPct?'pct-row':''].filter(Boolean).join(' ');
+    t+=`<tr class="${cls}"><td class="sno">${esc(sno)}</td><td class="part">${esc(p)}</td>`;
+    for(let i=0;i<19;i++){const v=vals[i],neg=typeof v==='number'&&v<0,future=i>=11&&(v===0||v===null||v===undefined);t+=`<td data-dsop-col="${i}" class="sop-col-${i} ${neg?'neg ':''}${future?'future':''}">${fmtSop(v,isPct)}</td>`;}
+    t+='</tr>';
+  });
+  t+='</tbody>'; el.innerHTML=t;
+}
+function toggleDetailedSopColumn(index){ const cells=document.querySelectorAll(`#detailedSopTable [data-dsop-col="${index}"]`); if(!cells.length)return; const header=document.querySelector(`#detailedSopTable th[data-dsop-col="${index}"]`); const collapsed=header?.classList.contains('col-collapsed'); cells.forEach(el=>{el.classList.toggle('col-collapsed',!collapsed);el.classList.remove('col-hidden')}); const icon=header?.querySelector('.toggle-icon'); if(icon)icon.textContent=collapsed?'⊖':'⊕'; document.getElementById('detSopShowAll')?.classList.remove('active'); }
+function setDetailedSopGroup(mode){
+  const hidden=new Set();
+  if(mode==='fy'){[0,1,2].forEach(i=>hidden.add(i));}
+  if(mode==='qtr'){[3,4,5,6].forEach(i=>hidden.add(i));}
+  if(mode==='future'){[12,13,14,15,16,17,18].forEach(i=>hidden.add(i));}
+  if(mode==='fyqtr'){[0,1,2,3,4,5,6].forEach(i=>hidden.add(i));}
+  document.querySelectorAll('#detailedSopTable [data-dsop-col]').forEach(el=>{const i=Number(el.getAttribute('data-dsop-col'));el.classList.toggle('col-hidden',hidden.has(i));el.classList.remove('col-collapsed')});
+  document.querySelectorAll('#detailedSop .sop-controls button').forEach(b=>b.classList.remove('active'));
+  const id={all:'detSopShowAll',fy:'detSopFY',qtr:'detSopQtr',future:'detSopFuture',fyqtr:'detSopFYQtr'}[mode];
+  if(id)document.getElementById(id)?.classList.add('active');
+  document.querySelectorAll('#detailedSopTable .toggle-icon').forEach(icon=>icon.textContent='⊖');
+}
+function toggleDetailedSopGroup(group){ const map={fy:[0,1,2],qtr:[3,4,5,6],future:[12,13,14,15,16,17,18]}; const cols=map[group]||[]; const first=document.querySelector(`#detailedSopTable [data-dsop-col="${cols[0]}"]`); const shouldHide=first?!first.classList.contains('col-hidden'):true; cols.forEach(i=>document.querySelectorAll(`#detailedSopTable [data-dsop-col="${i}"]`).forEach(el=>{el.classList.toggle('col-hidden',shouldHide);el.classList.remove('col-collapsed')})); cols.forEach(i=>{const icon=document.querySelector(`#detailedSopTable th[data-dsop-col="${i}"] .toggle-icon`);if(icon)icon.textContent='⊖'}); document.getElementById('detSopShowAll')?.classList.remove('active'); }
+
+
+function renderCostAnalysis(){
+  const source=D.sga_breakdown_ytd||{};
+  const entries=Object.entries(source).map(([k,v])=>[k,Number(v)||0]).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]);
+  const total=Number(D.ytd?.sga||entries.reduce((a,x)=>a+x[1],0));
+  const peopleTerms=['sales commission','payroll onsite','payroll offshore','payroll pss'];
+  const people=entries.filter(x=>peopleTerms.some(t=>x[0].toLowerCase().includes(t))).reduce((a,x)=>a+x[1],0);
+  const largest=entries[0]||['—',0];
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('costTotal',usd(total)); set('costPeople',usd(people)); set('costPeoplePct',total?(people/total*100).toFixed(1)+'%':'—');
+  set('costLargest',largest[0]); set('costLargestFoot',usd(largest[1])+' YTD');
+  const insight=document.getElementById('costAnalysisInsight');
+  if(insight){
+    const top3=entries.slice(0,3).reduce((a,x)=>a+x[1],0);
+    insight.innerHTML=`S&amp;GA totals <b>${usd(total)}</b> YTD. The three largest categories represent <b>${total?(top3/total*100).toFixed(1):0}%</b> of S&amp;GA. The largest driver is <b>${largest[0]}</b> at <b>${usd(largest[1])}</b>.`;
+  }
+  if(typeof Chart==='undefined')return;
+  const c1=document.getElementById('costAnalysisChart'),c2=document.getElementById('costConcentrationChart');
+  if(c1){
+    if(window.__costChart)window.__costChart.destroy();
+    window.__costChart=new Chart(c1,{type:'bar',data:{labels:entries.map(x=>x[0]),datasets:[{label:'S&GA',data:entries.map(x=>x[1]),backgroundColor:entries.map((_,i)=>i<3?C.navy:C.blue),borderRadius:3,maxBarThickness:22}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${usd(c.parsed.x)}`}}},scales:{x:{ticks:{callback:v=>usd(v)},grid:{color:C.line}},y:{grid:{display:false}}}}});
+  }
+  if(c2){
+    const top=entries.slice(0,6);
+    if(window.__costConcentrationChart)window.__costConcentrationChart.destroy();
+    window.__costConcentrationChart=new Chart(c2,{type:'doughnut',data:{labels:top.map(x=>x[0]),datasets:[{data:top.map(x=>x[1]),backgroundColor:[C.navy,C.blue,C.green,'#9CC0FA','#B7C4D4','#D9E0E7'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>` ${c.label}: ${usd(c.parsed)} (${total?(c.parsed/total*100).toFixed(1):0}%)`}}}}});
+  }
+}
+
+function renderDetailedSopChart(){
+  const S=D.detailed_sop;
+  const canvas=document.getElementById('detailedSopChart');
+  if(!S||!Array.isArray(S.rows)||!canvas||typeof Chart==='undefined')return;
+  const rows=S.rows, n=s=>String(s||'').trim().toLowerCase();
+  const exact=s=>rows.find(r=>n(r.particulars)===n(s));
+  const contains=s=>rows.find(r=>n(r.particulars).includes(n(s)));
+  const fy=r=>Number(r?.values?.[2]||0);
+  const rev=exact('Sub-Total - Product Revenues') ? 
+    (exact('Sub-Total - Product Revenues')?null:null) : null;
+  const overallRevenue=rows.find(r=>n(r.particulars)==='revenues' && Number(r.row)>=40) || rows.find(r=>n(r.particulars)==='revenue');
+  const gm=rows.find(r=>n(r.particulars)==='gross margin' && Number(r.row)>=40) || contains('gross margin');
+  const eb=contains('ebitda'), pbt=contains('profit before tax');
+  const data=[fy(overallRevenue),fy(gm),fy(eb),fy(pbt)];
+  if(window.__detailedSopChart)window.__detailedSopChart.destroy();
+  window.__detailedSopChart=new Chart(canvas,{type:'bar',data:{labels:['Revenue','Gross Margin','EBITDA','PBT'],datasets:[{label:'FY 2026-27 Overall',data,backgroundColor:[C.blue,C.green,C.green,C.red],borderRadius:3,maxBarThickness:58}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${usd(c.parsed.y)}`}}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}}}}});
+}
+
+function render(){
+  const i=lastIdx(D.revenue.total), m=D.months[i];
+  document.getElementById('asof').textContent='DATA AS OF '+m.toUpperCase()+' · PROVISIONAL';
+  document.getElementById('summaryPeriod').textContent='YTD APR–'+m.toUpperCase();
+
+  const rev=D.ytd.revenue, gm=D.ytd.gm_pct, eb=D.ytd.ebitda, pbt=D.ytd.pbt;
+  const prev=i>0?D.revenue.total[i-1]:0, mom=prev?((D.revenue.total[i]-prev)/Math.abs(prev)*100):0;
+  document.getElementById('executiveSummary').innerHTML=
+    `<b>Revenue:</b> YTD revenue is ${usd(rev)}, with ${m} at ${usd(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM). `+
+    `<b>Margin:</b> YTD gross margin is ${pct(gm)}, with monthly GM ranging from ${pct(Math.min(...D.gm_pct))} to ${pct(Math.max(...D.gm_pct))}. `+
+    `<b>Profitability:</b> EBITDA is ${usd(eb)} (${pct(D.ytd.ebitda_pct)} margin), while PBT is ${usd(pbt)}. `+
+    `<b>Below EBITDA:</b> depreciation of ${usd(D.ytd.depreciation)} and finance charges of ${usd(D.ytd.finance_charges)} materially reduce PBT.`;
+
+  const kpis=[
+    ['Revenue YTD',usd(rev),'Prior FY '+usd(D.fy_prior_full.revenue),''],
+    ['Gross Margin',pct(gm),'Prior FY '+pct(D.fy_prior_full.gm_pct),'green'],
+    ['EBITDA YTD',usd(eb),pct(D.ytd.ebitda_pct)+' margin',eb>=0?'green':'red'],
+    ['PBT YTD',usd(pbt),'PBT margin '+pct(D.ytd.pbt/rev),pbt>=0?'green':'red']
+  ];
+  document.getElementById('summaryKpis').innerHTML=kpis.map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value ${x[1].startsWith('-')?'neg':''}">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  document.getElementById('performanceKpis').innerHTML=kpis.map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value ${x[1].startsWith('-')?'neg':''}">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+
+  document.getElementById('mixPeriod').textContent=m+' · latest reported month';
+  const mp=D.revenue.product[i], ms=D.revenue.subscription[i], mv=D.revenue.service[i];
+  const mixTotal = mp + ms + mv;
+  document.getElementById('donutTotal').textContent = usd(mixTotal);
+
+  make('summaryMix','doughnut',{
+    labels:['Product','Subscription','Services'],
+    datasets:[{
+      data:[mp,ms,mv],
+      backgroundColor:[C.navy,'#9CC0FA','#C99A3A'],
+      borderWidth:4,
+      borderColor:'#fff',
+      hoverOffset:5
+    }]
+  },{
+    responsive:true,
+    maintainAspectRatio:false,
+    cutout:'60%',
+    rotation:-90,
+    plugins:{
+      legend:{
+        position:'bottom',
+        labels:{
+          boxWidth:34,
+          boxHeight:12,
+          padding:14,
+          font:{size:11},
+          generateLabels(chart){
+            const ds=chart.data.datasets[0];
+            const total=ds.data.reduce((a,b)=>a+b,0);
+            return chart.data.labels.map((label,i)=>({
+              text:`${label} (${total ? Math.round(ds.data[i]/total*100) : 0}%)`,
+              fillStyle:ds.backgroundColor[i],
+              strokeStyle:ds.backgroundColor[i],
+              lineWidth:0,
+              hidden:false,
+              index:i
+            }));
+          }
+        }
+      },
+      tooltip:{
+        callbacks:{
+          label:c=>` ${c.label}: ${usd(c.parsed)} (${mixTotal ? (c.parsed/mixTotal*100).toFixed(0) : 0}%)`
+        }
+      }
+    }
+  });
+
+  make('summaryRevenue','line',{labels:D.months,datasets:[{label:'Revenue',data:D.revenue.total,borderColor:C.blue,backgroundColor:C.blue,tension:.3,fill:false}]},{...commonOptions()});
+  make('summaryEbitda','bar',{labels:D.months,datasets:[{label:'EBITDA',data:D.ebitda,backgroundColor:D.ebitda.map(v=>v>=0?C.green:C.red)}]},commonOptions());
+  make('revGm','bar',{labels:D.months,datasets:[{label:'Revenue',data:D.revenue.total,backgroundColor:C.blue},{label:'Gross margin %',data:D.gm_pct.map(v=>v*100),type:'line',yAxisID:'gm',borderColor:C.orange,backgroundColor:C.orange,tension:.3}]},{...commonOptions(),scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}},gm:{position:'right',min:0,max:100,ticks:{callback:v=>v+'%'},grid:{display:false}}}});
+  make('ebitdaPbt','bar',{labels:D.months,datasets:[{label:'EBITDA',data:D.ebitda,backgroundColor:C.green},{label:'PBT',data:D.pbt,backgroundColor:C.orange}]},commonOptions());
+
+  const ytd=[D.revenue.product.reduce((a,b)=>a+b,0),D.revenue.service.reduce((a,b)=>a+b,0),D.revenue.subscription.reduce((a,b)=>a+b,0)];
+  make('revenueContribution','bar',{labels:['Product','Services','Subscription'],datasets:[{label:'YTD revenue',data:ytd,backgroundColor:[C.navy,C.orange,'#9CC0FA']}]},{...commonOptions(),plugins:{legend:{display:false}}});
+
+  const bullets=[
+    `Revenue accelerated sharply, with ${m} the strongest reported month at <b>${usd(D.revenue.total[i])}</b>.`,
+    `Gross margin remains within a <b>${pct(Math.min(...D.gm_pct))}–${pct(Math.max(...D.gm_pct))}</b> monthly range.`,
+    `EBITDA is <b>${eb>=0?'positive':'negative'}</b> at ${usd(eb)}, representing a ${pct(D.ytd.ebitda_pct)} YTD margin.`,
+    `PBT is ${usd(pbt)} after ${usd(D.ytd.depreciation)} of depreciation and ${usd(D.ytd.finance_charges)} of finance charges.`,
+    `Product revenue represents <b>${(ytd[0]/rev*100).toFixed(0)}%</b> of YTD revenue, indicating material product concentration.`
+  ];
+  document.getElementById('driverBullets').innerHTML=bullets.map(b=>`<div class="bullet"><span class="dot"></span><div>${b}</div></div>`).join('');
+
+  const rows=[
+    ['Total revenue',D.revenue.total,D.ytd.revenue,'total'],
+    ['COGS',D.cogs,D.ytd.cogs,''],
+    ['Gross margin',D.gross_margin,D.ytd.gross_margin,'total'],
+    ['Gross margin %',D.gm_pct,D.ytd.gm_pct,'pct'],
+    ['SG&A expenses',D.sga,D.ytd.sga,''],
+    ['EBITDA',D.ebitda,D.ytd.ebitda,'total'],
+    ['EBITDA %',D.ebitda_pct,D.ytd.ebitda_pct,'pct'],
+    ['Depreciation & amortization',D.depreciation,D.ytd.depreciation,''],
+    ['Finance charges',D.finance_charges,D.ytd.finance_charges,''],
+    ['Other income / expense',D.other_income_exp,D.ytd.other_income_exp,''],
+    ['Profit before tax',D.pbt,D.ytd.pbt,'total']
+  ];
+  let t='<thead><tr><th>Particulars</th>'+D.months.map(x=>`<th>${x}</th>`).join('')+'<th>YTD</th></tr></thead><tbody>';
+  rows.forEach(r=>{t+=`<tr class="${r[3]=='total'?'total':''}"><td>${r[0]}</td>`;r[1].forEach(v=>t+=`<td class="${v<0?'neg':''}">${r[3]=='pct'?pct(v):usd(v)}</td>`);t+=`<td class="${r[2]<0?'neg':''}">${r[3]=='pct'?pct(r[2]):usd(r[2])}</td></tr>`});
+  t+='</tbody>';document.getElementById('plTable').innerHTML=t;
+
+  const bridge=[['Revenue',rev],['COGS',-D.ytd.cogs],['Gross margin',D.ytd.gross_margin],['SG&A',-D.ytd.sga],['EBITDA',eb],['D&A',-D.ytd.depreciation],['Finance',-D.ytd.finance_charges],['Other',-D.ytd.other_income_exp],['PBT',pbt]];
+  let run=0, bd=[], colors=[];
+  bridge.forEach(([l,v])=>{if(['Revenue','Gross margin','EBITDA','PBT'].includes(l)){bd.push([0,v]);run=v;colors.push(C.navy)}else{const e=run+v;bd.push([Math.min(run,e),Math.max(run,e)]);run=e;colors.push(v<0?C.red:C.green)}});
+  make('profitBridge','bar',{labels:bridge.map(x=>x[0]),datasets:[{data:bd,backgroundColor:colors}]},{...commonOptions(),plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}}}});
+}
+
+
+function toggleSopColumn(index){
+  const cells=document.querySelectorAll(`#sopTable [data-sop-col="${index}"]`);
+  if(!cells.length) return;
+  const header=document.querySelector(`#sopTable th[data-sop-col="${index}"]`);
+  const collapsed=header?.classList.contains('col-collapsed');
+  cells.forEach(el=>{el.classList.toggle('col-collapsed',!collapsed);el.classList.remove('col-hidden');});
+  const icon=header?.querySelector('.toggle-icon');
+  if(icon) icon.textContent=collapsed?'⊖':'⊕';
+  document.getElementById('sopShowAll')?.classList.remove('active');
+}
+
+function setSopGroup(mode){
+  const hidden = new Set();
+  if(mode==='fy'){ [0,1,2].forEach(i=>hidden.add(i)); }
+  if(mode==='qtr'){ [3,4,5,6].forEach(i=>hidden.add(i)); }
+  if(mode==='future'){ [12,13,14,15,16,17,18].forEach(i=>hidden.add(i)); }
+  if(mode==='fyqtr'){ [0,1,2,3,4,5,6].forEach(i=>hidden.add(i)); }
+  document.querySelectorAll('#sopTable [data-sop-col]').forEach(el=>{
+    const i=Number(el.getAttribute('data-sop-col'));
+    el.classList.toggle('col-hidden',hidden.has(i));
+    el.classList.remove('col-collapsed');
+  });
+  document.querySelectorAll('.sop-controls button').forEach(b=>b.classList.remove('active'));
+  const id={all:'sopShowAll',fy:'sopFY',qtr:'sopQtr',future:'sopFuture',fyqtr:'sopFYQtr'}[mode];
+  if(id) document.getElementById(id).classList.add('active');
+  document.querySelectorAll('#sopTable .toggle-icon').forEach(icon=>icon.textContent='⊖');
+}
+
+function toggleSopGroup(group){
+  const map={fy:[0,1,2],qtr:[3,4,5,6],future:[12,13,14,15,16,17,18]};
+  const cols=map[group]||[];
+  const first=document.querySelector(`#sopTable [data-sop-col="${cols[0]}"]`);
+  const shouldHide=first ? !first.classList.contains('col-hidden') : true;
+  cols.forEach(i=>document.querySelectorAll(`#sopTable [data-sop-col="${i}"]`).forEach(el=>{el.classList.toggle('col-hidden',shouldHide);el.classList.remove('col-collapsed')}));
+  cols.forEach(i=>{const icon=document.querySelector(`#sopTable th[data-sop-col="${i}"] .toggle-icon`);if(icon) icon.textContent='⊖';});
+  document.getElementById('sopShowAll').classList.remove('active');
+}
+
+
+async function ensureChartJs(){
+  if(window.Chart) return true;
+  const sources=[
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js'
+  ];
+  for(const src of sources){
+    try{
+      await new Promise((resolve,reject)=>{
+        const el=document.createElement('script');
+        el.src=src;
+        el.onload=resolve;
+        el.onerror=()=>reject(new Error('Unable to load '+src));
+        document.head.appendChild(el);
+      });
+      if(window.Chart) return true;
+    }catch(e){ console.warn(e.message); }
+  }
+  return false;
+}
+
+
+function renderCharts(){
+  // Main dashboard charts are built by render().
+  return true;
+}
+
+async function main(){
+  const status=document.getElementById('asof');
+  try{
+    // Always start with the complete embedded MIS snapshot.
+    await loadData();
+
+    // CRITICAL: Chart.js must be loaded BEFORE any render function
+    // because the main render() creates the dashboard charts.
+    const chartsReady=await ensureChartJs();
+
+    // Render every section independently.
+    try{ if(typeof render==='function') render(); }catch(e){ console.error('Main dashboard render:',e); }
+    try{ if(typeof renderSummarySOP==='function') renderSummarySOP(); }catch(e){ console.error('Summary SOP render:',e); }
+    try{ if(typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(e){ console.error('Detailed SOP render:',e); }
+    try{ if(typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(e){ console.error('Cost Analysis render:',e); }
+    try{ if(typeof renderBalanceSheet==='function') renderBalanceSheet(); }catch(e){ console.error('Balance Sheet render:',e); }
+    try{ if(typeof renderCashFlow==='function') renderCashFlow(); }catch(e){ console.error('Cash Flow render:',e); }
+
+    if(chartsReady){
+      // Dedicated charts whose rendering is separate from render().
+      try{ if(typeof renderDetailedSopChart==='function') renderDetailedSopChart(); }catch(e){ console.error('Detailed SOP chart:',e); }
+      if(status) status.textContent='MIS DATA LOADED · ALL CHARTS READY';
+    }else{
+      if(status) status.textContent='MIS DATA LOADED · CHART LIBRARY UNAVAILABLE';
+    }
+  }catch(e){
+    console.error('Dashboard startup error:',e);
+    // Embedded data remains the final fallback.
+    try{ D=EMBEDDED_DATA; }catch(_){}
+    if(status) status.textContent='EMBEDDED MIS DATA';
+    // If Chart.js is already available, retry the visual layer.
+    try{ if(window.Chart && typeof render==='function') render(); }catch(_){}
+    try{ if(window.Chart && typeof renderSummarySOP==='function') renderSummarySOP(); }catch(_){}
+    try{ if(window.Chart && typeof renderDetailedSOP==='function') renderDetailedSOP(); }catch(_){}
+    try{ if(window.Chart && typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(_){}
+  }
+}
+main();
+
+</script>
+
+<!-- CFO AI CHATBOT -->
+<button id="cfoChatToggle" class="cfo-chat-toggle" type="button" aria-label="Open CFO AI Assistant" aria-expanded="false" onclick="window.toggleCfoChat()">✦</button>
+
+<div id="cfoChat" class="cfo-chat" aria-hidden="true">
+  <div class="cfo-chat-head">
+    <div><strong>Ask CFO</strong><span>Data-aware financial assistant</span></div>
+    <button id="cfoChatClose" type="button" aria-label="Close CFO assistant" onclick="window.closeCfoChat()">×</button>
+  </div>
+  <div class="cfo-chat-status"><span class="cfo-status-dot"></span>Connected to dashboard data</div>
+  <div id="cfoChatMessages" class="cfo-chat-messages"></div>
+  <div class="cfo-chat-suggestions">
+    <button type="button" data-q="What is our YTD revenue?">YTD revenue</button>
+    <button type="button" data-q="Why is PBT negative?">Why is PBT negative?</button>
+    <button type="button" data-q="What is driving SG&A?">SG&A drivers</button>
+    <button type="button" data-q="How is August performing?">August performance</button>
+  </div>
+  <form id="cfoChatForm" class="cfo-chat-form">
+    <input id="cfoChatInput" autocomplete="off" placeholder="Ask about revenue, EBITDA, PBT, margin..." />
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<style>
+.cfo-chat-toggle{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border:0;border-radius:50%;background:var(--navy);color:#fff;font-size:25px;box-shadow:0 8px 28px rgba(9,43,82,.28);cursor:pointer;z-index:2147483000;pointer-events:auto}
+.cfo-chat-toggle:hover{transform:translateY(-2px)}
+.cfo-chat{position:fixed;right:24px;bottom:94px;width:390px;max-width:calc(100vw - 28px);height:590px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 55px rgba(9,43,82,.22);z-index:2147482999;display:none;overflow:hidden}
+.cfo-chat.open{display:flex!important;flex-direction:column}
+.cfo-chat-head{background:var(--navy);color:#fff;padding:15px 16px;display:flex;justify-content:space-between;align-items:center}
+.cfo-chat-head strong{display:block;font-size:14px}.cfo-chat-head span{display:block;color:#c8d8ea;font-size:10px;margin-top:2px}
+.cfo-chat-head button{background:transparent;border:0;color:#fff;font-size:24px;cursor:pointer}
+.cfo-chat-status{font-size:10px;color:var(--muted);padding:8px 13px;border-bottom:1px solid var(--line)}
+.cfo-status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:5px}
+.cfo-chat-messages{flex:1;overflow:auto;padding:13px;background:#f7f9fb}
+.cfo-msg{max-width:88%;padding:9px 11px;border-radius:8px;margin:7px 0;font-size:11.5px;line-height:1.5;white-space:pre-wrap}
+.cfo-msg.bot{background:#fff;border:1px solid var(--line);color:var(--ink);margin-right:auto}.cfo-msg.user{background:var(--navy);color:#fff;margin-left:auto}
+.cfo-chat-suggestions{display:flex;gap:5px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid var(--line)}
+.cfo-chat-suggestions button{border:1px solid #cbd6e1;background:#fff;color:var(--navy);border-radius:14px;padding:5px 8px;font-size:9.5px;cursor:pointer}
+.cfo-chat-form{display:flex;gap:7px;padding:10px;border-top:1px solid var(--line);background:#fff}.cfo-chat-form input{flex:1;min-width:0;border:1px solid #cbd6e1;border-radius:5px;padding:9px;font:inherit;font-size:11px;outline:none}.cfo-chat-form input:focus{border-color:var(--blue)}.cfo-chat-form button{border:0;background:var(--orange);color:#fff;border-radius:5px;padding:0 13px;font-size:11px;font-weight:700;cursor:pointer}
+@media(max-width:500px){.cfo-chat{right:10px;bottom:82px;width:calc(100vw - 20px);height:70vh}.cfo-chat-toggle{right:14px;bottom:14px}}
+</style>
+
+<script>
+(function(){
+  function initCfoChat(){
+    const toggle=document.getElementById('cfoChatToggle'), panel=document.getElementById('cfoChat'), close=document.getElementById('cfoChatClose'), messages=document.getElementById('cfoChatMessages'), form=document.getElementById('cfoChatForm'), input=document.getElementById('cfoChatInput');
+    if(!toggle||!panel||!close||!messages||!form||!input){console.error('CFO chatbot elements missing');return;}
+    function addMessage(text,who){const el=document.createElement('div');el.className='cfo-msg '+who;el.textContent=text;messages.appendChild(el);messages.scrollTop=messages.scrollHeight;}
+    function money(v){v=Number(v)||0;const a=Math.abs(v),s=a>=1e6?(a/1e6).toFixed(2)+'M':a>=1e3?(a/1e3).toFixed(0)+'K':a.toFixed(0);return (v<0?'-$':'$')+s}
+    function percent(v){return ((Number(v)||0)*100).toFixed(1)+'%'}
+    function idx(){return typeof lastIdx==='function'?lastIdx(D.revenue.total):D.revenue.total.length-1}
+    function latestMonth(){return D.months[idx()]}
+    function sum(a){return (a||[]).reduce((x,y)=>x+(Number(y)||0),0)}
+    function topSga(){return Object.entries(D.sga_breakdown_ytd||{}).sort((a,b)=>b[1]-a[1]).slice(0,5)}
+    function answer(q){
+      if(!D)return 'The financial data has not finished loading yet.';const x=q.toLowerCase().trim(),i=idx(),m=latestMonth(),revenue=D.ytd.revenue,ebitda=D.ytd.ebitda,pbt=D.ytd.pbt;
+      if(/^(hi|hello|hey)\b/.test(x))return 'Hello. I’m your CFO data assistant. I can analyse the financial data currently loaded into the dashboard.';
+      if(x.includes('ytd revenue')||x.includes('revenue ytd')||x.includes('total revenue'))return `YTD revenue is ${money(revenue)} through ${m}. ${m} revenue is ${money(D.revenue.total[i])}. The strongest reported month is ${D.months[D.revenue.total.indexOf(Math.max(...D.revenue.total))]} at ${money(Math.max(...D.revenue.total))}.`;
+      if(x.includes('perpetual sale')||x.includes('detailed sop')||x.includes('evidian')||x.includes('maintenance & support')||x.includes('professional services revenue')||x.includes('detailed revenue')){
+        const rows=D.detailed_sop?.rows||[];
+        const n=s=>String(s||'').toLowerCase();
+        const fy=r=>Number(r?.values?.[2]||0);
+        const find=t=>rows.find(r=>n(r.particulars).includes(t));
+        const p=find('perpetual sale');
+        const ev=find('3rd party license - evidian');
+        const ms=find('maintenance & support - band');
+        const ps=rows.find(r=>n(r.particulars).includes('professional services')&&n(r.particulars).includes('revenue'));
+        const sub=rows.find(r=>n(r.particulars).includes('subscription')&&n(r.particulars).includes('revenue'));
+        const eb=find('ebitda');
+        const pb=find('profit before tax');
+        const lines=[];
+        if(p)lines.push(`Perpetual Sale FY 2026-27: ${money(fy(p))}.`);
+        if(ev)lines.push(`3rd Party License - Evidian FY 2026-27: ${money(fy(ev))}.`);
+        if(ms)lines.push(`Maintenance & Support - Band FY 2026-27: ${money(fy(ms))}.`);
+        if(ps)lines.push(`Professional Services revenue FY 2026-27: ${money(fy(ps))}.`);
+        if(sub)lines.push(`Subscription revenue FY 2026-27: ${money(fy(sub))}.`);
+        if(eb)lines.push(`Detailed SOP EBITDA FY 2026-27: ${money(fy(eb))}.`);
+        if(pb)lines.push(`Detailed SOP PBT FY 2026-27: ${money(fy(pb))}.`);
+        return lines.length?lines.join(' '):'I could not find that Detailed SOP line.';
+      }
+      if(x.includes('revenue mix')||x.includes('product')||x.includes('service')||x.includes('subscription')){const p=sum(D.revenue.product),s=sum(D.revenue.service),sub=sum(D.revenue.subscription),tot=D.revenue.total[i]||1;return `Revenue mix analysis:\n${m}: Product ${money(D.revenue.product[i])} (${(D.revenue.product[i]/tot*100).toFixed(0)}%), Services ${money(D.revenue.service[i])} (${(D.revenue.service[i]/tot*100).toFixed(0)}%), Subscription ${money(D.revenue.subscription[i])} (${(D.revenue.subscription[i]/tot*100).toFixed(0)}%).\nYTD mix: Product ${(p/revenue*100).toFixed(0)}%, Services ${(s/revenue*100).toFixed(0)}%, Subscription ${(sub/revenue*100).toFixed(0)}%.`;}
+      if(x.includes('gross margin')||x.includes('gm')){const min=Math.min(...D.gm_pct),max=Math.max(...D.gm_pct);return `YTD gross margin is ${percent(D.ytd.gm_pct)}. Monthly gross margin ranges from ${percent(min)} to ${percent(max)}. ${m} gross margin is ${percent(D.gm_pct[i])}.`;}
+      if(x.includes('ebitda'))return `YTD EBITDA is ${money(ebitda)}, a ${percent(D.ytd.ebitda_pct)} margin. ${m} EBITDA is ${money(D.ebitda[i])}.`;
+      if(x.includes('pbt')||x.includes('profit before tax')||(x.includes('why')&&x.includes('negative')))return `YTD PBT is ${money(pbt)}. EBITDA is ${money(ebitda)}, so the gap below EBITDA is ${money(pbt-ebitda)}. Depreciation is ${money(D.ytd.depreciation)} and finance charges are ${money(D.ytd.finance_charges)}.`;
+      if(x.includes('sga')||x.includes('sg&a')||x.includes('expense')||x.includes('cost')){const top=topSga(),total=D.ytd.sga;return `YTD SG&A is ${money(total)}.\nTop drivers:\n`+top.map((e,n)=>`${n+1}. ${e[0]} — ${money(e[1])} (${(e[1]/total*100).toFixed(1)}%)`).join('\n');}
+      if(x.includes('august')||x.includes('latest month')||x.includes('current month')){const prev=i>0?D.revenue.total[i-1]:0,mom=prev?((D.revenue.total[i]-prev)/Math.abs(prev)*100):0;return `${m} performance:\nRevenue ${money(D.revenue.total[i])} (${mom>=0?'+':''}${mom.toFixed(0)}% MoM)\nGross margin ${percent(D.gm_pct[i])}\nEBITDA ${money(D.ebitda[i])}\nPBT ${money(D.pbt[i])}`;}
+      if(x.includes('best month')||x.includes('highest revenue')){const j=D.revenue.total.indexOf(Math.max(...D.revenue.total));return `The strongest reported revenue month is ${D.months[j]} at ${money(D.revenue.total[j])}.`;}
+      if(x.includes('risk')||x.includes('concern')||x.includes('problem')){const product=sum(D.revenue.product)/revenue;return `Key management watch-outs:\n• PBT is ${money(pbt)} YTD.\n• Product revenue represents ${(product*100).toFixed(0)}% of YTD revenue.\n• SG&A is ${money(D.ytd.sga)}.\n• Depreciation and finance charges total ${money(D.ytd.depreciation+D.ytd.finance_charges)}.`;}
+      return 'I can answer questions using the dashboard data. Try: “What is YTD revenue?”, “Why is PBT negative?”, “What is driving SG&A?”, “How is August performing?”, or “What is our revenue mix?”';
+    }
+    window.toggleCfoChat=function(){const open=!panel.classList.contains('open');panel.classList.toggle('open',open);panel.setAttribute('aria-hidden',String(!open));toggle.setAttribute('aria-expanded',String(open));if(open&&!messages.children.length)addMessage('I’m connected to the financial data loaded into this dashboard. What would you like to know?','bot');if(open)setTimeout(()=>input.focus(),50);};
+    window.closeCfoChat=function(){panel.classList.remove('open');panel.setAttribute('aria-hidden','true');toggle.setAttribute('aria-expanded','false');};
+    document.querySelectorAll('.cfo-chat-suggestions button').forEach(b=>b.addEventListener('click',()=>{const q=b.dataset.q;addMessage(q,'user');setTimeout(()=>addMessage(answer(q),'bot'),150)}));
+    form.addEventListener('submit',e=>{e.preventDefault();const q=input.value.trim();if(!q)return;addMessage(q,'user');input.value='';setTimeout(()=>addMessage(answer(q),'bot'),150)});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCfoChat);else initCfoChat();
+})();
+</script>
+</body>
+</html>
