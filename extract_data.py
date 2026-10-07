@@ -201,6 +201,7 @@ def extract_detailed_sop():
     period_headers = headers[3:22]
     for item in extracted:
         item["values"] = item["values"][3:22]
+    extracted = [item for item in extracted if int(item["row"]) <= 75 and (item["particulars"].strip() or any(v not in (None, "") for v in item["values"]))]
 
     return {
         "headers": period_headers,
@@ -211,52 +212,29 @@ def extract_detailed_sop():
 
 
 def extract_summary_sop():
-    """Same header-driven extraction for Summary SOP."""
+    """Extract Summary SOP into the same 19 MIS reporting columns used by the dashboard."""
     rows = read_sheet("Summary SOP")
-    header_idx = find_header_row(
-        rows,
-        ["FY 25-26", "FY 2026-27", "Apr", "May", "Jun", "Jul", "Aug"]
-    )
+    header_idx = find_header_row(rows, ["FY 25-26", "FY 2026-27", "Apr", "May", "Jun", "Jul", "Aug"])
     if header_idx is None:
         raise RuntimeError("Could not locate Summary SOP period header row.")
-
     raw_header = rows[header_idx]
     headers = make_unique_headers(raw_header)
-
-    particulars_col = 1
+    particulars_col = 2
     for j, v in enumerate(raw_header):
-        t = str(clean(v) or "").lower()
-        if "particular" in t or "description" in t or "account" in t:
+        if "particular" in str(clean(v) or "").lower():
             particulars_col = j
             break
-
-    extracted = []
+    period_headers = ["FY 2026-27","FY 25-26","1Q' 25-26","1Q' 26-27","2Q' 26-27","3Q' 26-27","4Q' 26-27","Apr-26","May-26","Jun-26","Jul-26","Aug-26","Sep-26","Oct-26","Nov-26","Dec-26","Jan-27","Feb-27","Mar-27"]
+    extracted=[]
     for excel_row, row in enumerate(rows[header_idx + 1:], start=header_idx + 2):
-        values = list(row) + [None] * max(0, len(headers) - len(row))
-        if not values:
-            continue
-        particulars = clean(values[particulars_col])
-        if particulars is None and not any(clean(v) is not None for v in values):
-            continue
-
-        data = []
-        for v in values:
-            x = clean(v)
-            data.append(number(x) if isinstance(x, (int, float)) else x)
-
-        extracted.append({
-            "row": excel_row,
-            "particulars": str(particulars) if particulars is not None else "",
-            "values": data
-        })
-
-    return {
-        "headers": headers,
-        "header_row": header_idx + 1,
-        "particulars_column": particulars_col + 1,
-        "rows": extracted
-    }
-
+        values=list(row)+[None]*max(0,len(headers)-len(row))
+        if not values: continue
+        p=clean(values[particulars_col]) if len(values)>particulars_col else None
+        if str(p or '').strip().lower() in ('s no','particulars'): continue
+        if p is None and not any(clean(v) is not None for v in values): continue
+        data=[number(clean(v)) if isinstance(clean(v),(int,float)) else clean(v) for v in values]
+        extracted.append({"row":excel_row,"particulars":str(p or ''),"values":(data[3:22]+[None]*19)[:19]})
+    return {"headers":period_headers,"header_row":header_idx+1,"particulars_column":1,"rows":extracted}
 
 def extract_balance_sheet():
     rows = read_sheet("Balance sheet")

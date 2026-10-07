@@ -17,79 +17,42 @@
   ],
   "ytd": {
     "revenue": 5165158.850000001,
-    "gross_margin": 451215.9122436458,
+    "gross_margin": 4007939.932243646,
     "ebitda": 299763.0844572196,
     "pbt": -1205312.4359840744,
-    "gm_pct": 0.0873576060964022,
+    "gm_pct": 0.775956761183375,
     "ebitda_pct": 0.05803559835477655,
     "pbt_pct": -0.23335437902051634
   },
   "summary_sop": {
     "headers": [
-      "Blank_1",
-      "Statement of Financials FY 2026-27",
-      "Blank_3",
-      "Blank_4",
-      "Blank_5",
-      "Blank_6",
-      "Blank_7",
-      "Blank_8",
-      "Blank_9",
-      "Blank_10",
-      "Blank_11",
-      "Blank_12",
-      "Blank_13",
-      "Blank_14",
-      "Blank_15",
-      "Blank_16",
-      "Blank_17",
-      "Blank_18",
-      "Blank_19",
-      "Blank_20",
-      "Blank_21",
-      "Blank_22",
-      "Blank_23"
+      "FY 2026-27",
+      "FY 25-26",
+      "1Q' 25-26",
+      "1Q' 26-27",
+      "2Q' 26-27",
+      "3Q' 26-27",
+      "4Q' 26-27",
+      "Apr-26",
+      "May-26",
+      "Jun-26",
+      "Jul-26",
+      "Aug-26",
+      "Sep-26",
+      "Oct-26",
+      "Nov-26",
+      "Dec-26",
+      "Jan-27",
+      "Feb-27",
+      "Mar-27"
     ],
     "header_row": 3,
-    "particulars_column": 2,
+    "particulars_column": 1,
     "rows": [
       {
-        "row": 6,
-        "particulars": "S No",
-        "values": [
-          null,
-          "S No",
-          "Particulars",
-          "FY 2026-27",
-          "FY  25-26",
-          "1Q' 25-26",
-          "1Q' 26-27",
-          "2Q' 26-27",
-          "3Q' 26-27",
-          "4Q' 26-27",
-          46142.0,
-          46173.0,
-          46203.0,
-          46234.0,
-          46265.0,
-          46295.0,
-          46326.0,
-          46356.0,
-          46387.0,
-          46418.0,
-          46446.0,
-          46477.0,
-          null
-        ]
-      },
-      {
         "row": 7,
-        "particulars": "I",
+        "particulars": "Net Sales & Revenues:",
         "values": [
-          null,
-          "I",
-          "Net Sales & Revenues:",
-          null,
           null,
           null,
           null,
@@ -113,11 +76,8 @@
       },
       {
         "row": 8,
-        "particulars": "",
+        "particulars": "(i) Products:",
         "values": [
-          null,
-          null,
-          "(i) Products:",
           4486894.62,
           8271764.97,
           748571.27,
@@ -136,17 +96,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 9,
-        "particulars": "",
+        "particulars": "COGS - Products:",
         "values": [
-          null,
-          null,
-          "COGS - Products:",
           1072725.7,
           1931994.5100000002,
           206370.65000000002,
@@ -165,17 +121,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 10,
-        "particulars": "",
+        "particulars": "Gross Profit",
         "values": [
-          null,
-          null,
-          "Gross Profit",
           3414168.92,
           6339770.459999999,
           542200.62,
@@ -194,17 +146,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 11,
-        "particulars": "",
+        "particulars": "GM %",
         "values": [
-          null,
-          null,
-          "GM %",
           0.76092023752499,
           0.7664350332719861,
           0.7243139587764301,
@@ -223,18 +171,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 12,
-        "particulars": "",
+        "particulars": "(ii) Services:",
         "values": [
-          null,
-          null,
-          "(ii) Services:",
-          null,
           null,
           null,
           null,
@@ -258,11 +201,8 @@
       },
       {
         "row": 13,
-        "particulars": "",
+        "particulars": "Revenues:",
         "values": [
-          null,
-          null,
-          "Revenues:",
           516296.44999999995,
           1346468.965482505,
           299524.6949174066,
@@ -281,17 +221,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 14,
-        "particulars": "",
+        "particulars": "COGS - Services:",
         "values": [
-          null,
-          null,
-          "COGS - Services:",
           65080.53775635416,
           163346.94,
           65907.37,
@@ -310,17 +246,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 15,
-        "particulars": "",
+        "particulars": "Gross Margin",
         "values": [
-          null,
-          null,
-          "Gross Margin",
           451215.9122436458,
           1183122.025482505,
           233617.3249174066,
@@ -339,17 +271,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 16,
-        "particulars": "",
+        "particulars": "GM %",
         "values": [
-          null,
-          null,
-          "GM %",
           0.8739473460327799,
           0.8786849573309958,
           0.7799601464641377,
@@ -368,18 +296,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 17,
-        "particulars": "",
+        "particulars": "(iii) Subscription:",
         "values": [
-          null,
-          null,
-          "(iii) Subscription:",
-          null,
           null,
           null,
           null,
@@ -403,11 +326,8 @@
       },
       {
         "row": 18,
-        "particulars": "",
+        "particulars": "Revenues",
         "values": [
-          null,
-          null,
-          "Revenues",
           161967.78,
           625373.37,
           223762.31,
@@ -426,17 +346,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 19,
-        "particulars": "",
+        "particulars": "COGS",
         "values": [
-          null,
-          null,
-          "COGS",
           19412.68,
           24990.839999999997,
           0.0,
@@ -455,17 +371,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 20,
-        "particulars": "",
+        "particulars": "Gross Margin",
         "values": [
-          null,
-          null,
-          "Gross Margin",
           142555.1,
           600382.53,
           223762.31,
@@ -484,17 +396,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 21,
-        "particulars": "",
+        "particulars": "GM %",
         "values": [
-          null,
-          null,
-          "GM %",
           0.8801448041085703,
           0.9600385286632849,
           1.0,
@@ -513,18 +421,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 22,
-        "particulars": "",
+        "particulars": "Overall:",
         "values": [
-          null,
-          null,
-          "Overall:",
-          null,
           null,
           null,
           null,
@@ -548,11 +451,8 @@
       },
       {
         "row": 23,
-        "particulars": "",
+        "particulars": "Revenues",
         "values": [
-          null,
-          null,
-          "Revenues",
           5165158.85,
           10243607.305482505,
           1271858.2749174065,
@@ -571,17 +471,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 24,
-        "particulars": "",
+        "particulars": "COGS",
         "values": [
-          null,
-          null,
-          "COGS",
           1157218.9177563542,
           2120332.29,
           272278.02,
@@ -600,17 +496,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 25,
-        "particulars": "",
+        "particulars": "Gross Margin",
         "values": [
-          null,
-          null,
-          "Gross Margin",
           4007939.932243645,
           8123275.015482505,
           999580.2549174065,
@@ -629,17 +521,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 26,
-        "particulars": "",
+        "particulars": "GM %",
         "values": [
-          null,
-          null,
-          "GM %",
           0.775956761183375,
           0.7930092176742102,
           0.7859211003539828,
@@ -658,17 +546,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 28,
-        "particulars": "III",
+        "particulars": "S&GA Expenses:",
         "values": [
-          null,
-          "III",
-          "S&GA Expenses:",
           3708176.8477864265,
           6777272.73402586,
           1784639.5622562845,
@@ -687,17 +571,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 31,
-        "particulars": "",
+        "particulars": "EBITDA",
         "values": [
-          null,
-          null,
-          "EBITDA",
           299763.08445721865,
           1346002.2814566446,
           -785059.307338878,
@@ -716,17 +596,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 32,
-        "particulars": "",
+        "particulars": "EBITDA %",
         "values": [
-          null,
-          null,
-          "EBITDA %",
           0.05803559835477638,
           0.131399246507258,
           -0.6172537638990155,
@@ -745,17 +621,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 33,
-        "particulars": "IV",
+        "particulars": "Finance Charges",
         "values": [
-          null,
-          "IV",
-          "Finance Charges",
           192647.03999999998,
           103307.83,
           21570.34,
@@ -774,17 +646,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 34,
-        "particulars": "V",
+        "particulars": "Depreciation & Amortization Expenses",
         "values": [
-          null,
-          "V",
-          "Depreciation & Amortization Expenses",
           1350000.0,
           0.0,
           0.0,
@@ -803,17 +671,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 35,
-        "particulars": "VI",
+        "particulars": "Other (Income) / Expenses",
         "values": [
-          null,
-          "VI",
-          "Other (Income) / Expenses",
           -37571.51955870613,
           -217051.59921170762,
           -29749.119999999995,
@@ -832,17 +696,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 36,
-        "particulars": "",
+        "particulars": "Profit Before Tax",
         "values": [
-          null,
-          null,
-          "Profit Before Tax",
           -1205312.4359840753,
           1459746.0506683523,
           -776880.527338878,
@@ -861,17 +721,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 37,
-        "particulars": "",
+        "particulars": "PBT %",
         "values": [
-          null,
-          null,
-          "PBT %",
           -0.23335437902051656,
           0.14250312484031658,
           -0.6108231889196365,
@@ -890,17 +746,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 38,
-        "particulars": "VII",
+        "particulars": "Tax Expense",
         "values": [
-          null,
-          "VII",
-          "Tax Expense",
           0.0,
           0.0,
           0.0,
@@ -909,7 +761,6 @@
           0.0,
           0.0,
           0.0,
-          null,
           null,
           null,
           null,
@@ -925,11 +776,8 @@
       },
       {
         "row": 39,
-        "particulars": "",
+        "particulars": "Profit After Tax",
         "values": [
-          null,
-          null,
-          "Profit After Tax",
           -1205312.4359840753,
           1459746.0506683523,
           -776880.527338878,
@@ -948,17 +796,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 40,
-        "particulars": "",
+        "particulars": "PAT %",
         "values": [
-          null,
-          null,
-          "PAT %",
           -0.23335437902051656,
           0.14250312484031658,
           -0.6108231889196365,
@@ -977,17 +821,13 @@
           0.0,
           0.0,
           0.0,
-          0.0,
-          null
+          0.0
         ]
       },
       {
         "row": 44,
-        "particulars": "",
+        "particulars": "Ctrl Chk",
         "values": [
-          null,
-          null,
-          "Ctrl Chk",
           0.0,
           null,
           null,
@@ -995,7 +835,6 @@
           5.820766091346741e-10,
           0.0,
           0.0,
-          null,
           null,
           null,
           null,
@@ -1016,7 +855,7 @@
     "headers": [
       "FY 2026-27",
       "FY 25-26",
-      "Q1 25-26",
+      "1Q' 25-26",
       "1Q' 26-27",
       "2Q' 26-27",
       "3Q' 26-27",
@@ -1788,31 +1627,6 @@
         ]
       },
       {
-        "row": 38,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      },
-      {
         "row": 39,
         "particulars": "COGS - Subscription",
         "values": [
@@ -2035,31 +1849,6 @@
           0.0,
           0.0,
           0.0
-        ]
-      },
-      {
-        "row": 48,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
         ]
       },
       {
@@ -2413,31 +2202,6 @@
         ]
       },
       {
-        "row": 63,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      },
-      {
         "row": 64,
         "particulars": "Total - SG&A Expenses",
         "values": [
@@ -2460,31 +2224,6 @@
           0.0,
           0.0,
           0.0
-        ]
-      },
-      {
-        "row": 65,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
         ]
       },
       {
@@ -2736,156 +2475,6 @@
           0.0,
           0.0
         ]
-      },
-      {
-        "row": 79,
-        "particulars": "Ctrl Chk",
-        "values": [
-          0.0,
-          null,
-          null,
-          0.0,
-          0.0,
-          0.0,
-          null,
-          789093.3202591392,
-          547005.1383871447,
-          297518.1974708429,
-          540148.262007724,
-          "0xf",
-          -48076.949742700184,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0,
-          0.0
-        ]
-      },
-      {
-        "row": 81,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          "Total Payroll Cost",
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      },
-      {
-        "row": 82,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          "Payroll Expense",
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      },
-      {
-        "row": 83,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          "Capitalization-Onshore",
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      },
-      {
-        "row": 84,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          "Capitalization-Offshore",
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
-      },
-      {
-        "row": 85,
-        "particulars": "",
-        "values": [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          "Total Capitalization",
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null
-        ]
       }
     ],
     "data_start_column": "FY 2026-27 at index 0; FY 25-26 at index 1; ... Mar-27 at index 18"
@@ -2982,5 +2571,162 @@
     "PSS Hrs June 25",
     "Salary",
     "IS June 25"
-  ]
+  ],
+  "revenue": {
+    "total": [
+      312242.54000000004,
+      725891.19,
+      1092834.8,
+      583094.37,
+      1257598.72,
+      1193497.23,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  "gross_margin": [
+    232999.0499875,
+    543046.6651145832,
+    861014.7373541667,
+    484938.25808958337,
+    951889.6877985417,
+    934051.5338992708,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "ebitda": [
+    -330653.8302591391,
+    -88400.12838714465,
+    224624.98757615092,
+    -85114.982007724,
+    276105.7323980769,
+    303201.30513700016,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "pbt": [
+    -564093.3202591392,
+    -322005.13838714466,
+    -72518.19747084293,
+    -315148.262007724,
+    20375.532398076914,
+    48076.949742700184,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "cogs": [
+    79243.49001250001,
+    182844.52488541667,
+    231820.06264583336,
+    98156.11191041666,
+    305709.0322014583,
+    259445.69610072917,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "gm_pct": [
+    0.7462117429210638,
+    0.748110285116676,
+    0.7878727300358358,
+    0.8316634202617723,
+    0.756910509417934,
+    0.7826172616247051,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "sga": [
+    563652.8802466391,
+    631446.7935017279,
+    636389.7497780158,
+    570053.2400973074,
+    675783.9554004648,
+    630850.2287622706,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "finance_charges": [
+    8441.44,
+    8400.48,
+    84269.07999999999,
+    30745.03,
+    30777.22,
+    30013.79,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "depreciation": [
+    225000.0,
+    225000.0,
+    225000.0,
+    225000.0,
+    225000.0,
+    225000.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "other_income_exp": [
+    -1.95,
+    204.53,
+    -12125.894953006133,
+    -25711.75,
+    -47.02,
+    110.5653943,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "sga_breakdown_ytd": {
+    "Payroll & Benefits - Onsite": 1126020.1951071864,
+    "Payroll & Benefits - Offshore": 351183.73,
+    "Payroll PSS Balance Non Billable": 181857.61224364585,
+    "Third Party Contractors": 192920.75,
+    "Sales commission & Bonus": 1365499.7250376104,
+    "Travel & Entertainment": 70975.488350863,
+    "Marketing, Campaign & Events": 33030.64,
+    "Communication": 28229.18003414783,
+    "Dues & Subscriptions": 113639.89471353257,
+    "Rent & Utilities": 13147.61,
+    "Professional Fee": 45257.31351332308,
+    "Insurance": 46400.06,
+    "Other Expenses - GA": 140014.6487861171
+  }
 }
