@@ -148,6 +148,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
     letter-spacing:.02em;
   }
 
+.data-status{display:flex;align-items:center;justify-content:center;min-height:250px;text-align:center;padding:24px;color:var(--muted);line-height:1.7;background:#f7f9fb;border:1px dashed #cbd6e1;border-radius:8px}.data-status strong{color:var(--ink);font-size:15px}.data-status-cell{padding:30px!important;text-align:center!important;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -317,11 +318,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 
 <section class="section" id="roe">
   <div class="section-title">Return on Equity Analysis <span>ROE · DuPont</span></div>
-  <div class="grid g3">
-    <div class="placeholder"><div><strong>ROE</strong>Requires net income and average equity.</div></div>
-    <div class="placeholder"><div><strong>ROA / Asset Turnover</strong>Requires balance-sheet assets.</div></div>
-    <div class="placeholder"><div><strong>DuPont Analysis</strong>Margin × asset turnover × equity multiplier will be calculated from BS and P&L data.</div></div>
-  </div>
+  <div class="grid g3" id="roeGrid"></div>
 </section>
 
 <section class="section" id="cf">
@@ -337,11 +334,7 @@ tr.total td{font-weight:700;color:var(--navy);border-top:1.5px solid var(--navy)
 
 <section class="section" id="liquidity">
   <div class="section-title">Detailed Liquidity Analysis <span>Coverage · Cash · Working Capital</span></div>
-  <div class="grid g3">
-    <div class="placeholder"><div><strong>Debt Service Coverage</strong>Requires debt service and cash-flow data.</div></div>
-    <div class="placeholder"><div><strong>Current / Quick Ratio</strong>Requires current asset and current liability data.</div></div>
-    <div class="placeholder"><div><strong>Liquidity Position</strong>Cash, debt and free-cash-flow trend will appear here.</div></div>
-  </div>
+  <div class="grid g3" id="liquidityGrid"></div>
 </section>
 
 <div class="footer">
@@ -360,6 +353,49 @@ function usd(v){return(v<0?'-$':'$')+fmt(Math.abs(v))}
 function pct(v){return(v*100).toFixed(1)+'%'}
 function lastIdx(a){for(let i=a.length-1;i>=0;i--)if(a[i]!==0)return i;return a.length-1}
 
+function normalizeData(){
+  if(!D || !D.summary_sop) return;
+  const sr=D.summary_sop.rows||[];
+  const byRow=n=>sr.find(r=>Number(r.row)===n);
+  const vals=n=>byRow(n)?.values||[];
+  const months=D.months||[];
+  const monthly=(row)=>{
+    const a=vals(row); return months.map((_,i)=>Number(a[7+i]??0)||0);
+  };
+  const fy=n=>Number(vals(n)[0]??0)||0;
+  D.revenue=D.revenue||{};
+  D.revenue.product=monthly(8);
+  D.revenue.service=monthly(13);
+  D.revenue.subscription=monthly(18);
+  D.revenue.total=monthly(23);
+  D.gross_margin=monthly(25);
+  D.cogs=monthly(24);
+  D.gm_pct=monthly(26).map((v,i)=>D.revenue.total[i]?v||0:D.revenue.total[i]?D.gross_margin[i]/D.revenue.total[i]:0);
+  D.sga=monthly(28);
+  D.ebitda=monthly(31);
+  D.ebitda_pct=monthly(32);
+  D.finance_charges=monthly(33);
+  D.depreciation=monthly(34);
+  D.other_income_exp=monthly(35);
+  D.pbt=monthly(36);
+  D.ytd=D.ytd||{};
+  D.ytd.revenue=fy(23); D.ytd.cogs=fy(24); D.ytd.gross_margin=fy(25); D.ytd.gm_pct=fy(26);
+  D.ytd.sga=fy(28); D.ytd.ebitda=fy(31); D.ytd.ebitda_pct=fy(32); D.ytd.finance_charges=fy(33);
+  D.ytd.depreciation=fy(34); D.ytd.other_income_exp=fy(35); D.ytd.pbt=fy(36); D.ytd.pbt_pct=fy(37);
+  D.fy_prior_full={
+    revenue:Number(vals(23)[1]??0)||0,
+    gross_margin:Number(vals(25)[1]??0)||0,
+    gm_pct:Number(vals(26)[1]??0)||0,
+    ebitda:Number(vals(31)[1]??0)||0,
+    ebitda_pct:Number(vals(32)[1]??0)||0,
+    pbt:Number(vals(36)[1]??0)||0,
+    pbt_pct:Number(vals(37)[1]??0)||0
+  };
+  // Keep the source-reported YTD values authoritative, while ensuring all
+  // chart/table fields used by the dashboard exist.
+  D.ytd.revenue=fy(23); D.ytd.gross_margin=fy(25); D.ytd.ebitda=fy(31); D.ytd.pbt=fy(36);
+}
+
 async function loadData(){
   /*
     GitHub Pages safe data loading.
@@ -372,6 +408,7 @@ async function loadData(){
       it replaces the embedded snapshot.
   */
   D = EMBEDDED_DATA;
+  normalizeData();
   const status = document.getElementById('asof');
   if(status) status.textContent='EMBEDDED MIS SNAPSHOT · PROVISIONAL';
 
@@ -412,6 +449,7 @@ async function loadData(){
 
       if(valid){
         D=candidate;
+        normalizeData();
         if(status) status.textContent='LIVE JSON DATA';
         return;
       }
@@ -433,28 +471,54 @@ function make(id,type,data,options={}){
 }
 
 function renderBalanceSheet(){
-  const B=D.balance_sheet||{}; const months=B.months||[]; const n=months.length; if(!n)return;
-  const i=n-1, m=months[i];
-  const get=k=>(B[k]||[])[i]||0;
+  const B=D.balance_sheet||{};
+  const wrap=document.getElementById('bsKpis');
+  if(!wrap) return;
+  if(!B.source_available){
+    document.getElementById('bsPeriod').textContent='Data availability status';
+    wrap.innerHTML=`<div class="kpi"><div class="kpi-label">Balance Sheet</div><div class="kpi-value">Not reported</div><div class="kpi-foot">September 2026 workbook has no Balance sheet tab</div></div><div class="kpi"><div class="kpi-label">Assets</div><div class="kpi-value">—</div><div class="kpi-foot">Awaiting balance-sheet source</div></div><div class="kpi"><div class="kpi-label">Liabilities & Equity</div><div class="kpi-value">—</div><div class="kpi-foot">Awaiting balance-sheet source</div></div><div class="kpi"><div class="kpi-label">Current Ratio</div><div class="kpi-value">—</div><div class="kpi-foot">Cannot be calculated from September source</div></div>`;
+    const a=document.getElementById('bsAssets'), l=document.getElementById('bsLiabilities');
+    if(a) a.parentElement.innerHTML='<div class="data-status"><strong>Balance Sheet data unavailable</strong><br>There is no Balance sheet worksheet in the September 2026 MIS workbook. No figures have been fabricated.</div>';
+    if(l) l.parentElement.innerHTML='<div class="data-status"><strong>Liabilities & equity data unavailable</strong><br>Upload/provide the Balance Sheet source to populate this analysis.</div>';
+    document.getElementById('bsTable').innerHTML='<tbody><tr><td class="data-status-cell">Balance Sheet detail cannot be populated from the September workbook because the source sheet is absent.</td></tr></tbody>';
+    return;
+  }
+  const months=B.months||[]; if(!months.length)return;
+  const i=months.length-1,m=months[i],get=k=>(B[k]||[])[i]||0;
   const currentAssets=get('trade_receivables')+get('inventory')+get('cash')+get('other_assets');
   const currentLiab=get('trade_payables')+get('deferred_revenue')+get('other_liabilities');
-  const wc=currentAssets-currentLiab;
-  const ratio=currentLiab?currentAssets/currentLiab:0;
+  const wc=currentAssets-currentLiab,ratio=currentLiab?currentAssets/currentLiab:0;
   document.getElementById('bsPeriod').textContent=m+' latest reported';
-  const cards=[['Total Assets',usd(get('total_assets')),''],['Cash & Bank',usd(get('cash')),''],['Working Capital',usd(wc),''],['Current Ratio',ratio.toFixed(2)+'x','']];
-  document.getElementById('bsKpis').innerHTML=cards.map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  document.getElementById('bsKpis').innerHTML=[['Total Assets',usd(get('total_assets'))],['Cash & Bank',usd(get('cash'))],['Working Capital',usd(wc)],['Current Ratio',ratio.toFixed(2)+'x']].map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${m}</div></div>`).join('');
   make('bsAssets','bar',{labels:['PP&E','Receivables','Inventory','Cash','Other assets'],datasets:[{label:m,data:[get('ppe'),get('trade_receivables'),get('inventory'),get('cash'),get('other_assets')],backgroundColor:[C.navy,C.blue,C.orange,C.green,'#9CC0FA']}]},{...commonOptions(),plugins:{legend:{display:false}}});
   make('bsLiabilities','bar',{labels:["Shareholder's Fund",'Debt','Payables','Deferred revenue','Other liabilities'],datasets:[{label:m,data:[get('shareholders_fund'),get('debts'),get('trade_payables'),get('deferred_revenue'),get('other_liabilities')],backgroundColor:[C.navy,C.orange,C.blue,'#9CC0FA',C.green]}]},{...commonOptions(),plugins:{legend:{display:false}}});
   const fields=[['Total Assets','total_assets'],['PP&E','ppe'],['Trade Receivables','trade_receivables'],['Inventory','inventory'],['Cash & Bank','cash'],['Other Assets','other_assets'],["Shareholder's Fund",'shareholders_fund'],['Debts','debts'],['Trade Payables','trade_payables'],['Deferred Revenue','deferred_revenue'],['Other Liabilities','other_liabilities'],['Total Eq. & Liability','total_equity_liability']];
-  let t='<thead><tr><th>Particulars</th>'+months.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';
-  fields.forEach(([label,key])=>{t+=`<tr class="${key==='total_assets'||key==='total_equity_liability'?'total':''}"><td>${label}</td>`;(B[key]||[]).forEach(v=>t+=`<td class="${v<0?'neg':''}">${usd(v)}</td>`);t+='</tr>'}); t+='</tbody>'; document.getElementById('bsTable').innerHTML=t;
+  let t='<thead><tr><th>Particulars</th>'+months.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>'; fields.forEach(([label,key])=>{t+=`<tr><td>${label}</td>`;(B[key]||[]).forEach(v=>t+=`<td class="${v<0?'neg':''}">${usd(v)}</td>`);t+='</tr>'});t+='</tbody>';document.getElementById('bsTable').innerHTML=t;
 }
 function renderCashFlow(){
-  const F=D.cash_flow||{}; const B=D.balance_sheet||{}; const months=B.months||[]; const cash=B.cash||[];
-  document.getElementById('cfKpis').innerHTML=[['Free Cash Flow',usd(F.fcf||0),'Latest workbook value','green'],['Change in Working Capital',usd(F.change_wc||0),'Latest workbook value',(F.change_wc||0)<0?'red':'green'],['Change in Capex',usd(F.change_capex||0),'Latest workbook value',(F.change_capex||0)>0?'red':'green']].map(x=>`<div class="kpi ${x[3]}"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
-  const base=F.fcf||0, wc=F.change_wc||0, cap=F.change_capex||0;
-  make('cfBridge','bar',{labels:['Change in WC','Change in Capex','Free Cash Flow'],datasets:[{label:'USD',data:[wc,cap,base],backgroundColor:[wc<0?C.red:C.green,cap>0?C.red:C.green,C.navy]}]}, {...commonOptions(),plugins:{legend:{display:false}}});
-  if(months.length) make('cashTrend','line',{labels:months,datasets:[{label:'Cash & Bank',data:cash,borderColor:C.green,backgroundColor:C.green,tension:.25}]},commonOptions());
+  const F=D.cash_flow||{};
+  if(!F || Object.keys(F).length===0){
+    document.getElementById('cfKpis').innerHTML=[['Free Cash Flow','Not reported','No cash-flow statement in September workbook'],['Operating Cash Flow','—','Source not available'],['Capex','—','Source not available']].map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+    const b=document.getElementById('cfBridge'); if(b)b.parentElement.innerHTML='<div class="data-status"><strong>Cash Flow data unavailable</strong><br>The September 2026 MIS workbook does not contain a Cash Flow worksheet. The dashboard will not invent FCF, operating cash flow or capex values.</div>';
+    const c=document.getElementById('cashTrend'); if(c)c.parentElement.innerHTML='<div class="data-status"><strong>Cash trend unavailable</strong><br>Balance Sheet cash data is also unavailable in the September workbook.</div>';
+    return;
+  }
+  const B=D.balance_sheet||{},months=B.months||[],cash=B.cash||[];
+  document.getElementById('cfKpis').innerHTML=[['Free Cash Flow',usd(F.fcf||0),'Latest workbook value'],['Change in Working Capital',usd(F.change_wc||0),'Latest workbook value'],['Change in Capex',usd(F.change_capex||0),'Latest workbook value']].map(x=>`<div class="kpi"><div class="kpi-label">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="kpi-foot">${x[2]}</div></div>`).join('');
+  make('cfBridge','bar',{labels:['Change in WC','Change in Capex','Free Cash Flow'],datasets:[{label:'USD',data:[F.change_wc||0,F.change_capex||0,F.fcf||0],backgroundColor:[C.blue,C.orange,C.navy]}]}, {...commonOptions(),plugins:{legend:{display:false}}});
+  if(months.length)make('cashTrend','line',{labels:months,datasets:[{label:'Cash & Bank',data:cash,borderColor:C.green,backgroundColor:C.green,tension:.25}]},commonOptions());
+}
+
+function renderROE(){
+  const el=document.getElementById('roeGrid'); if(!el)return;
+  el.innerHTML=[['ROE','Not calculable','Average equity is unavailable because the September workbook has no Balance Sheet.'],['ROA / Asset Turnover','Not calculable','Average assets are unavailable from the September source.'],['DuPont Analysis','Awaiting BS','Net margin is available, but asset turnover and equity multiplier require BS data.']].map(x=>`<div class="card round"><div class="card-title">${x[0]}</div><div class="kpi-value">${x[1]}</div><div class="card-sub">${x[2]}</div></div>`).join('');
+}
+
+function renderLiquidity(){
+  const el=document.getElementById('liquidityGrid'); if(!el)return;
+  const rev=D.ytd.revenue||0,eb=D.ytd.ebitda||0,fc=D.ytd.finance_charges||0;
+  el.innerHTML=`<div class="card round"><div class="card-title">Liquidity data availability</div><div class="card-sub">September workbook does not provide Balance Sheet / Cash Flow tabs.</div><div class="chart tall"><canvas id="liquidityChart"></canvas></div></div><div class="card round"><div class="card-title">Available coverage indicators</div><div class="kpi-value">${fc?((eb/fc).toFixed(2)+'x'):'—'}</div><div class="card-sub">EBITDA / finance charges — earnings coverage, not DSCR</div></div><div class="card round"><div class="card-title">Cash / current ratio</div><div class="kpi-value">Not available</div><div class="card-sub">Requires reported cash, current assets and current liabilities</div></div>`;
+  const c=document.getElementById('liquidityChart'); if(c) new Chart(c,{type:'bar',data:{labels:['Revenue','EBITDA','Finance Charges'],datasets:[{label:'Available financial indicators',data:[rev,eb,fc],backgroundColor:[C.blue,C.green,C.orange]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:v=>usd(v)},grid:{color:C.line}}}}});
 }
 
 function renderSummarySOP(){
@@ -834,6 +898,8 @@ async function main(){
     try{ if(typeof renderCostAnalysis==='function') renderCostAnalysis(); }catch(e){ console.error('Cost Analysis render:',e); }
     try{ if(typeof renderBalanceSheet==='function') renderBalanceSheet(); }catch(e){ console.error('Balance Sheet render:',e); }
     try{ if(typeof renderCashFlow==='function') renderCashFlow(); }catch(e){ console.error('Cash Flow render:',e); }
+    try{ if(typeof renderROE==='function') renderROE(); }catch(e){ console.error('ROE render:',e); }
+    try{ if(typeof renderLiquidity==='function') renderLiquidity(); }catch(e){ console.error('Liquidity render:',e); }
 
     if(chartsReady){
       // Dedicated charts whose rendering is separate from render().
